@@ -160,6 +160,8 @@ Launch with `DEVICECTL_CHILD_<NAME>=…` in front of `xcrun devicectl device pro
 | `DE_AUTOTAP="t:x,y;…"` / `DE_AUTOKEY="t:keycode;…"` | Inject clicks (normalized coordinates) and key taps at given times, so menus can be navigated without touching the device | `DEVirtualInput.mm` |
 | `DE_TRACE_TOUCH=1` | Log every touch (view hit), every recognizer state, every injected press/release with its frame number | `DETouchTrace.mm`, `DEVirtualInput.mm` |
 | `DE_UI_DIAG="s,s,…"` | At those times, log safe area, all cameras (rect, depth), all root canvases, every `AspectRatioFitter`, the RectTransform tree, and the methods (with offsets in `GameAssembly`) of interesting game classes | `DEUIDiag.mm` |
+| `DE_CLASS_DIAG="s:frag,frag"` | At that second, list every class whose name contains a fragment: fields (static values included) and methods with their offsets in `GameAssembly`, for `objdump --start-address` | `DEClassDiag.mm` |
+| `DE_ACH_TEST="s:ACH_DE_name"` | At that second, call the game's `Achievements.Set` with a made-up name (it must start with `ACH_DE_`) and report each step; Steam rejects the name, so nothing is unlocked | `DEClassDiag.mm` |
 | `DE_DISABLE_BC=1`, `DE_NATIVE_TOUCH=1`, `DE_NO_OVERLAY=1`, `DE_ASPECT_LETTERBOX=1` | Turn individual fixes off for comparison | various |
 
 Crash reports: `xcrun devicectl device info files --device <id> --domain-type systemCrashLogs`, then `device copy from` the `.ips` and read the triggered thread. `DEMetalCaps.mm` always logs the GPU name, `supportsBCTextureCompression`, and the first answer to each `supportsFamily:` / `supportsFeatureSet:` query.
@@ -185,7 +187,13 @@ Optional, off by default (`ACH_RELAY=1` in `config.env`). User-facing guide: [AC
 
 ### 10.1 What the game does with Steam
 
-- **Backend choice:** at start-up the game picks an achievement backend (Steam, GOG or none) and logs `INITIALIZE ACHIEVEMENTS: <backend>`. With the plain stub it logs `NONE` and drops every achievement.
+- **How an unlock flows** (read from the disassembly; class and method names from `DE_CLASS_DIAG`):
+  - `Achievements.Set(id)` first calls `LogWarningIfPlatformIsNone`, which calls `Achievements.get_Platform`. It then always calls `SteamAchievements.Set(id)`, and also `GOGAchievements.Set` when GOG Galaxy is signed in.
+  - `get_Platform` returns STEAM when a Steam object exists and `SteamManager.Initialized` is true, and GOG when `GogGalaxyManager.get_IsUserLogged` is true; otherwise NONE.
+  - `get_IsUserLogged` → `GogGalaxyManager.IsSignedIn` → `GalaxyInstance.User().SignedIn()`.
+  - `SteamAchievements.Set(id)` calls `SteamUserStats.SetAchievement(id)` and `StoreStats()` when `SteamManager.Instance.m_bInitialized` is set.
+  - `INITIALIZE ACHIEVEMENTS: <platform>` is logged by `Achievements.Initialize`, which runs twice: once early (before `SteamManager` exists, so `NONE`) and again from `SteamAchievements.Start`.
+  - The game never calls `RequestCurrentStats` in practice.
 - **The Steam backend:** it uses Steamworks.NET with manual callback dispatch. Besides the lifecycle calls (`SteamAPI_Init`, `SteamAPI_RestartAppIfNecessary`, `SteamAPI_Shutdown`, `SteamAPI_GetHSteamUser` / `GetHSteamPipe`, `SteamInternal_CreateInterface`, `SteamInternal_FindOrCreateUserInterface`), the native functions it binds are:
   - `ISteamUserStats`: `RequestCurrentStats`, `GetAchievement`, `SetAchievement`, `ClearAchievement`, `GetStatInt32` / `GetStatFloat`, `SetStatInt32` / `SetStatFloat`, `StoreStats`, `ResetAllStats`
   - `SteamAPI_ManualDispatch_*`: `Init`, `RunFrame`, `GetNextCallback`, `FreeLastCallback`, `GetAPICallResult`
@@ -201,6 +209,7 @@ Optional, off by default (`ACH_RELAY=1` in `config.env`). User-facing guide: [AC
 - **Callbacks:** `RequestCurrentStats` queues `UserStatsReceived_t` (1101) at once, answering from the local records. `StoreStats` queues `UserStatsStored_t` (1102), plus one `UserAchievementStored_t` (1103) for each achievement newly set. `ManualDispatch_GetNextCallback` hands them out.
 - **Layouts:** the macOS SDK packs callback structures to 4 bytes, and Steamworks.NET compiled for StandaloneOSX reads them that way: `CallbackMsg_t` 20 bytes, 1101 = 20, 1102 = 12, 1103 = 148. `_Static_assert`s pin these sizes.
 - **Strings:** the persona name, Steam ID and languages come from the last state the Mac sent. Before the first connection, the language is derived from the iPad's preferred language (`zh-Hans` → `schinese`, …).
+- **GOG Galaxy must not throw:** with the plain Galaxy stub, `GalaxyInstance.User()` returns NULL and `IsSignedIn` throws a `NullReferenceException`, so `get_Platform`, and with it every `Achievements.Set`, aborts before reaching Steam. That is harmless without achievement mode, but it would drop every achievement in it. In achievement mode `shell/stubs/galaxy_relay.c` makes `CSharp_GalaxyfApi_User___` return a placeholder object whose methods still return 0. `SignedIn()` is then false, the platform is STEAM, and the second `INITIALIZE ACHIEVEMENTS` line says `STEAM`.
 - **Achievement state:** each achievement keeps two flags, `steam` (confirmed by Steam) and `local` (set on this iPad, not confirmed yet). `GetAchievement` reports either one. A queued entry is dropped once Steam confirms it, so an entry is never sent twice.
 
 ### 10.3 Delivery
@@ -232,4 +241,8 @@ Optional, off by default (`ACH_RELAY=1` in `config.env`). User-facing guide: [AC
   - An unknown name was answered with `NAK … unknown` and dropped.
   - A real name was forwarded and stayed queued, because a dry run sends no `ACK`.
   - Callbacks 1101, 1102 and 1103 arrived with sizes 20, 12 and 148.
-- **Not verified yet:** the game on the iPad selecting its Steam backend and an achievement reaching Steam.
+- **iPad, with `make relay DRY_RUN=1`:**
+  - The game logs `INITIALIZE ACHIEVEMENTS:  STEAM` and `make smoke` passes all 16 checks.
+  - `DE_ACH_TEST="40:ACH_DE_RELAY_TEST"` calls the game's own `Achievements.Set`, which returns true. The stub records the entry, the Mac answers `NAK … unknown` (Steam has no such name), and the iPad drops it. Nothing was unlocked.
+  - The game's language setting (Chinese) was unchanged.
+- **Not verified yet:** a real achievement earned in play reaching Steam with the relay running for real.

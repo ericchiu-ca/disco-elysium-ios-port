@@ -47,7 +47,12 @@ python3 -I "$GEN" exports "$GAME_CONTENTS/PlugIns/steam_api.bundle/Contents/MacO
   steam_api "$WORK/steam_api.c" --overrides "$STEAM_OVERRIDES"
 compile_framework steam_api "$WORK/steam_api.c" ${STEAM_FLAGS[@]+"${STEAM_FLAGS[@]}"}
 
-python3 -I "$GEN" exports "$GAME_CONTENTS/PlugIns/libGalaxyCSharpGlue.dylib" GalaxyCSharpGlue "$WORK/GalaxyCSharpGlue.c"
+# 成就模式下 GalaxyInstance.User() 要返回非空对象，否则游戏的 Achievements.Set 会在调用 Steam 之前抛出异常
+# In achievement mode GalaxyInstance.User() must return a non-null object, otherwise the game's Achievements.Set throws before it calls Steam
+GALAXY_OVERRIDES=()
+[[ "$ACH_RELAY" == 1 ]] && GALAXY_OVERRIDES=(--overrides "$STUBS_SRC/galaxy_relay.c")
+python3 -I "$GEN" exports "$GAME_CONTENTS/PlugIns/libGalaxyCSharpGlue.dylib" GalaxyCSharpGlue "$WORK/GalaxyCSharpGlue.c" \
+  ${GALAXY_OVERRIDES[@]+"${GALAXY_OVERRIDES[@]}"}
 compile_framework GalaxyCSharpGlue "$WORK/GalaxyCSharpGlue.c"
 
 python3 -I "$GEN" exports "$GAME_CONTENTS/PlugIns/InControlNative.bundle/Contents/MacOS/InControlNative" \

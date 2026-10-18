@@ -101,6 +101,7 @@ There is nothing to do. When you unlock an achievement in the game, it appears o
 | `Player.log`: `the Mac refused the session: ERR steam …` | Steam is not running on the Mac, or not logged in |
 | Relay log: `Unknown achievement …, dropped` | The game sent a name Steam does not have; it is removed from the queue |
 | An achievement did not arrive | `pending.txt` on the iPad (Files app) still lists it; the relay log shows the session |
+| `Player.log`: `INITIALIZE ACHIEVEMENTS:  NONE` | Normal once at start-up, before Steam is up. A second line should say `STEAM`; if it does not, rebuild with `make stubs build install` |
 
 `make logs` fetches `Player.log`; every relay line starts with `[DEPort] steam relay:`.
 
@@ -110,6 +111,7 @@ There is nothing to do. When you unlock an achievement in the game, it appears o
 |---|---|
 | Mac: `make achievements` against a real Steam account | Works (45 achievements read) |
 | Mac: the iPad stub built for macOS against `make relay DRY_RUN=1` | Pairing accepted and a wrong secret rejected; Steam state received; an unknown name dropped; a real name forwarded and kept queued in dry run; callbacks 1101 / 1102 / 1103 delivered with the expected sizes |
-| iPad: the game unlocking an achievement and Steam receiving it | Not verified yet |
+| iPad: the game's own `Achievements.Set` through the stub to the Mac and back | Works. `DE_ACH_TEST` sends a made-up `ACH_DE_` name: the stub records it, the Mac's Steam session answers "unknown", the iPad drops it, and nothing is unlocked. `make smoke` passes all 16 checks; the game logs `INITIALIZE ACHIEVEMENTS:  STEAM` |
+| iPad: a real achievement earned in play reaching your Steam profile | Not observed yet (needs you to earn one with `make relay` running for real) |
 
 How it is built: [PORTING_NOTES.md](PORTING_NOTES.md) section 10.

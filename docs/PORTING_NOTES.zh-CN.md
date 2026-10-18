@@ -160,6 +160,8 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
 | `DE_AUTOTAP="秒:x,y;…"` / `DE_AUTOKEY="秒:键码;…"` | 在指定时间注入点击（归一化坐标）和按键，不碰设备也能走菜单 | `DEVirtualInput.mm` |
 | `DE_TRACE_TOUCH=1` | 记录每次触摸（命中的视图）、每个识别器的状态、每次注入的按下/松开及其帧号 | `DETouchTrace.mm`、`DEVirtualInput.mm` |
 | `DE_UI_DIAG="秒,秒,…"` | 在这些时间点记录安全区、所有相机（视口、深度）、所有根 Canvas、每个 `AspectRatioFitter`、RectTransform 层级，以及关心的游戏类的方法（含在 `GameAssembly` 中的偏移） | `DEUIDiag.mm` |
+| `DE_CLASS_DIAG="秒:片段,片段"` | 在那一秒列出类名含这些片段的所有类：字段（含静态字段的值）和方法，以及方法在 `GameAssembly` 里的偏移，可以直接用于 `objdump --start-address` | `DEClassDiag.mm` |
+| `DE_ACH_TEST="秒:ACH_DE_名字"` | 在那一秒用一个虚构的名字（必须以 `ACH_DE_` 开头）调用游戏的 `Achievements.Set`，逐步报告结果；Steam 会拒绝这个名字，所以不会解锁任何东西 | `DEClassDiag.mm` |
 | `DE_DISABLE_BC=1`、`DE_NATIVE_TOUCH=1`、`DE_NO_OVERLAY=1`、`DE_ASPECT_LETTERBOX=1` | 单独关闭某项修复，便于对比 | 各处 |
 
 崩溃报告：`xcrun devicectl device info files --device <id> --domain-type systemCrashLogs`，再用 `device copy from` 取回 `.ips`，看触发崩溃的线程。`DEMetalCaps.mm` 总会记录 GPU 名称、`supportsBCTextureCompression`，以及每种 `supportsFamily:` / `supportsFeatureSet:` 查询的第一次结果。
@@ -185,7 +187,13 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
 
 ### 10.1 游戏怎么使用 Steam
 
-- **选后端：**游戏启动时选一个成就后端（Steam、GOG 或者都不用），并输出 `INITIALIZE ACHIEVEMENTS: <后端>`。用普通桩库时输出 `NONE`，成就全部丢掉。
+- **一次解锁的流程**（从反汇编读出；类名和方法名来自 `DE_CLASS_DIAG`）：
+  - `Achievements.Set(id)` 先调用 `LogWarningIfPlatformIsNone`，后者调用 `Achievements.get_Platform`。接着总是调用 `SteamAchievements.Set(id)`；GOG Galaxy 已登录时，还会调用 `GOGAchievements.Set`。
+  - `get_Platform`：存在 Steam 对象且 `SteamManager.Initialized` 为真时返回 STEAM；`GogGalaxyManager.get_IsUserLogged` 为真时返回 GOG；否则返回 NONE。
+  - `get_IsUserLogged` → `GogGalaxyManager.IsSignedIn` → `GalaxyInstance.User().SignedIn()`。
+  - `SteamAchievements.Set(id)` 在 `SteamManager.Instance.m_bInitialized` 为真时，调用 `SteamUserStats.SetAchievement(id)` 和 `StoreStats()`。
+  - `INITIALIZE ACHIEVEMENTS: <平台>` 由 `Achievements.Initialize` 输出，它会运行两次：一次很早（`SteamManager` 还不存在，所以是 `NONE`），一次在 `SteamAchievements.Start` 里。
+  - 实际运行中，游戏从不调用 `RequestCurrentStats`。
 - **Steam 后端：**用的是 Steamworks.NET，回调手动分发。除了生命周期函数（`SteamAPI_Init`、`SteamAPI_RestartAppIfNecessary`、`SteamAPI_Shutdown`、`SteamAPI_GetHSteamUser` / `GetHSteamPipe`、`SteamInternal_CreateInterface`、`SteamInternal_FindOrCreateUserInterface`），它绑定的原生函数有：
   - `ISteamUserStats`：`RequestCurrentStats`、`GetAchievement`、`SetAchievement`、`ClearAchievement`、`GetStatInt32` / `GetStatFloat`、`SetStatInt32` / `SetStatFloat`、`StoreStats`、`ResetAllStats`
   - `SteamAPI_ManualDispatch_*`：`Init`、`RunFrame`、`GetNextCallback`、`FreeLastCallback`、`GetAPICallResult`
@@ -201,6 +209,7 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
 - **回调：**`RequestCurrentStats` 立即用本地记录排入 `UserStatsReceived_t`（1101）。`StoreStats` 排入 `UserStatsStored_t`（1102），并为每个新设置的成就排入一个 `UserAchievementStored_t`（1103）。`ManualDispatch_GetNextCallback` 把它们逐个交出去。
 - **结构布局：**macOS 版 SDK 的回调结构按 4 字节对齐，为 StandaloneOSX 编译的 Steamworks.NET 也按这个布局读取：`CallbackMsg_t` 20 字节，1101 为 20，1102 为 12，1103 为 148。代码里用 `_Static_assert` 固定这些大小。
 - **字符串：**昵称、Steam ID 和语言来自 Mac 上次发来的状态。第一次连上之前，语言根据 iPad 的首选语言换算（`zh-Hans` → `schinese`……）。
+- **GOG Galaxy 不能抛异常：**用普通的 Galaxy 桩库时，`GalaxyInstance.User()` 返回 NULL，`IsSignedIn` 抛出 `NullReferenceException`，于是 `get_Platform`，连同每一次 `Achievements.Set`，都在调用 Steam 之前中止。没有成就模式时这无关紧要，开了成就模式就会把成就全部丢掉。成就模式下，`shell/stubs/galaxy_relay.c` 让 `CSharp_GalaxyfApi_User___` 返回一个占位对象，它的方法仍然返回 0。于是 `SignedIn()` 为 false，平台判定为 STEAM，第二行 `INITIALIZE ACHIEVEMENTS` 显示 `STEAM`。
 - **成就状态：**每个成就有两个标记：`steam`（Steam 已确认）和 `local`（在这台 iPad 上设置、还没确认）。`GetAchievement` 只要有一个为真就报告已解锁。Steam 确认后，排队的记录随即删除，所以同一条记录不会发两次。
 
 ### 10.3 送达
@@ -232,4 +241,8 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
   - 未知的名字收到 `NAK … unknown`，被丢弃。
   - 真实的名字被转发；演练模式不回 `ACK`，所以它留在了队列里。
   - 1101、1102、1103 三个回调送达，大小分别是 20、12、148。
-- **尚未验证：**iPad 上的游戏选用 Steam 后端，以及成就真正到达 Steam。
+- **iPad，配合 `make relay DRY_RUN=1`：**
+  - 游戏输出 `INITIALIZE ACHIEVEMENTS:  STEAM`，`make smoke` 16 项全部通过。
+  - `DE_ACH_TEST="40:ACH_DE_RELAY_TEST"` 调用游戏自己的 `Achievements.Set`，返回 true。桩库记下这条记录，Mac 回答 `NAK … unknown`（Steam 上没有这个名字），iPad 随即丢弃它。没有解锁任何成就。
+  - 游戏的语言设置（中文）没有变化。
+- **尚未验证：**在游戏里真正拿到一个成就，并在转发服务正式运行时到达 Steam。

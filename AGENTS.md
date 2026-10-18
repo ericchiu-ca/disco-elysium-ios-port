@@ -23,7 +23,7 @@ This repository turns a user's own Mac copy of Disco Elysium – The Final Cut i
 | 4 | `make install push-data` | `App installed`; `push-data` completes (about 9.6 GB, ~20 s over USB-C the first time, about 1 s afterwards). iPad unlocked and paired. Both keep the user's saves in `Documents/SaveGames`; never add `--remove-existing-content` to the push (it empties all of `Documents`, see PORTING_NOTES §2.6) | 1 min |
 | 5 | `make smoke` | "Smoke test PASSED". Then open `build/smoke/<time>/device/snap-000.jpg` and `snap-003.jpg` and confirm what [docs/VERIFY.md](docs/VERIFY.md) describes | 75 s |
 | 6 | Hand over to the user | Ask them to run the manual checklist in [docs/VERIFY.md](docs/VERIFY.md) | — |
-| 7 (optional) | Steam achievements: [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md). `make relay-pair`, `ACH_RELAY="1"`, `make stubs build install`, then `make relay-install` (ask first) | `./setup.sh check` section 7 has no `✗`; `make smoke` shows "Steam achievement mode on" and no `INITIALIZE ACHIEVEMENTS: NONE`; `make relay-status` shows `Steam session started` | 2 min |
+| 7 (optional) | Steam achievements: [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md). `make relay-pair`, `ACH_RELAY="1"`, `make stubs build install`, then `make relay-install` (ask first) | `./setup.sh check` section 7 has no `✗`; `make smoke` shows "Steam achievement mode on" and "The game uses Steam for achievements"; `make relay-status` shows `Steam session started` | 2 min |
 
 Expected reference results are listed in [docs/VERIFY.md](docs/VERIFY.md).
 
@@ -33,8 +33,8 @@ Expected reference results are listed in [docs/VERIFY.md](docs/VERIFY.md).
 2. Get evidence on the device instead of guessing:
    - `make run` streams the game log; `make logs` fetches `Player.log` and snapshots.
    - Crash: `xcrun devicectl device info files --device <id> --domain-type systemCrashLogs`, copy the newest `DiscoElysium-*.ips` with `xcrun devicectl device copy from`, read the triggered thread.
-   - The opt-in diagnostics in [docs/PORTING_NOTES.md](docs/PORTING_NOTES.md) section 7: `DE_SNAPSHOT_EVERY`, `DE_AUTOTAP`, `DE_AUTOKEY`, `DE_TRACE_TOUCH`, `DE_UI_DIAG`, and the switches that turn single fixes off.
-3. Unity-internal or game-internal behaviour is best confirmed by reading it: list classes and methods through `DE_UI_DIAG` (it prints method offsets), then `xcrun objdump -d --start-address=… --stop-address=… build/Frameworks/GameAssembly.framework/GameAssembly`. For Unity's player library, `ar -x` the object, `segedit -extract __LLVM __bitcode`, `clang -S -emit-llvm`.
+   - The opt-in diagnostics in [docs/PORTING_NOTES.md](docs/PORTING_NOTES.md) section 7: `DE_SNAPSHOT_EVERY`, `DE_AUTOTAP`, `DE_AUTOKEY`, `DE_TRACE_TOUCH`, `DE_UI_DIAG`, `DE_CLASS_DIAG`, `DE_ACH_TEST`, and the switches that turn single fixes off.
+3. Unity-internal or game-internal behaviour is best confirmed by reading it: list classes and methods through `DE_CLASS_DIAG` (or `DE_UI_DIAG`; both print method offsets), then `xcrun objdump -d --start-address=… --stop-address=… build/Frameworks/GameAssembly.framework/GameAssembly`. For Unity's player library, `ar -x` the object, `segedit -extract __LLVM __bitcode`, `clang -S -emit-llvm`.
 4. Record what you learned in [docs/PORTING_NOTES.md](docs/PORTING_NOTES.md) (both languages).
 
 ## If the user's copy differs

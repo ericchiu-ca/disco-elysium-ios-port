@@ -101,6 +101,7 @@ make relay-pair                 # 在 config.env 里生成配对密钥
 | `Player.log`：`the Mac refused the session: ERR steam …` | Mac 上的 Steam 没有运行，或者没有登录 |
 | 转发日志：`Unknown achievement …, dropped` | 游戏发来了 Steam 上没有的名字，已从队列里删除 |
 | 某个成就没到 | iPad 上的 `pending.txt`（"文件"App）里还有它；转发日志里能看到会话情况 |
+| `Player.log`：`INITIALIZE ACHIEVEMENTS:  NONE` | 启动时出现一次是正常的，那时 Steam 还没起来。之后应当还有一行 `STEAM`；如果没有，用 `make stubs build install` 重新构建 |
 
 `make logs` 取回 `Player.log`，转发相关的每一行都以 `[DEPort] steam relay:` 开头。
 
@@ -110,6 +111,7 @@ make relay-pair                 # 在 config.env 里生成配对密钥
 |---|---|
 | Mac：`make achievements` 读取真实的 Steam 账号 | 可用（读到 45 个成就） |
 | Mac：把 iPad 桩库编译成 macOS 版，连接 `make relay DRY_RUN=1` | 配对通过，错误密钥被拒绝；收到 Steam 状态；未知名字被丢弃；真实名字被转发，演练模式下保留在队列里；1101 / 1102 / 1103 三个回调按预期大小送达 |
-| iPad：游戏解锁成就、Steam 收到 | 尚未验证 |
+| iPad：游戏自己的 `Achievements.Set` 经桩库到 Mac 再返回 | 可用。`DE_ACH_TEST` 发送一个虚构的 `ACH_DE_` 名字：桩库记下它，Mac 上的 Steam 会话回答"unknown"，iPad 随即丢弃，没有解锁任何东西。`make smoke` 16 项全部通过；游戏输出 `INITIALIZE ACHIEVEMENTS:  STEAM` |
+| iPad：在游戏里真正拿到的成就出现在你的 Steam 个人资料上 | 尚未观察到（需要你在 `make relay` 正式运行时拿到一个成就） |
 
 实现细节见 [PORTING_NOTES.zh-CN.md](PORTING_NOTES.zh-CN.md) 第十节。

@@ -37,7 +37,7 @@ Verified on an iPad Pro 11-inch (M5), iPadOS 27.2:
 | Input | Tap, hover, drag, double-tap to run, right click, scroll; a highlight button for interactables |
 | Game | New game, the opening dialogue, loading a save, and play in the first area were tested on the device |
 | Memory | About 5.8 GB in game, with about 6.5 GB of headroom before the system would end the app |
-| Steam achievements | Optional: recorded on the iPad and committed through the Steam client on your Mac ([docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md)). Mac side tested; end to end on the iPad not verified yet |
+| Steam achievements | Optional: recorded on the iPad and committed through the Steam client on your Mac ([docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md)). Verified on the iPad up to Steam's answer, using a test name; a real achievement reaching Steam not observed yet |
 
 ## How it works
 

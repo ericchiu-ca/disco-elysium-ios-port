@@ -75,12 +75,14 @@ else
   warn "$(m "这台设备没有启用硬件 BC 纹理（会在 CPU 上解压，内存占用更高）：" "Hardware BC textures are not enabled on this device (they are decompressed on the CPU, using more memory):") $(grep '\[DEPort\] BC textures' "$CONSOLE" | head -1)"
 fi
 
-# 成就模式（ACH_RELAY=1）：桩库已启用，游戏也选用了 Steam 成就后端（没有成就模式时它打印 NONE）
-# Achievement mode (ACH_RELAY=1): the stub is active and the game picked its Steam achievement backend (it prints NONE without achievement mode)
+# 成就模式（ACH_RELAY=1）：桩库已启用，游戏自己报告用 Steam 记成就。
+# 启动时先打印一次 NONE（SteamManager 还没起来），SteamAchievements.Start 再初始化一次时应当是 STEAM（移植笔记 10.1）
+# Achievement mode (ACH_RELAY=1): the stub is active and the game itself reports Steam as its achievement backend.
+# It prints NONE once at start-up (before SteamManager is up); the second initialization from SteamAchievements.Start
+# should say STEAM (PORTING_NOTES 10.1)
 if [[ "$ACH_RELAY" == 1 ]]; then
   check "Steam 成就模式已启用" "Steam achievement mode on" '\[DEPort\] steam relay: mode on'
-  check "游戏初始化了成就后端" "The game initialized an achievement backend" 'INITIALIZE ACHIEVEMENTS: '
-  absent "游戏没有退回到无成就模式" "The game did not fall back to no achievements" 'INITIALIZE ACHIEVEMENTS: +NONE'
+  check "游戏用 Steam 记成就" "The game uses Steam for achievements" 'INITIALIZE ACHIEVEMENTS: +STEAM'
   RELAY_LINE=$(grep -E '\[DEPort\] steam relay: (connected|cannot|the Mac)' "$CONSOLE" | head -1 | sed 's/.*steam relay: //' || true)
   [[ -n "$RELAY_LINE" ]] && log "$(m "转发：" "Relay: ")$RELAY_LINE"
 fi

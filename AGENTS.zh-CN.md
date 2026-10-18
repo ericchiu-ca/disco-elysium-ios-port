@@ -23,7 +23,7 @@ English: [AGENTS.md](AGENTS.md)
 | 4 | `make install push-data` | 出现 `App installed`；`push-data` 完成（约 9.6 GB，首次 USB-C 约 20 秒，之后约 1 秒）。iPad 已解锁并已配对。两者都不会动用户在 `Documents/SaveGames` 里的存档；推送时绝不要加 `--remove-existing-content`（它会清空整个 `Documents`，见移植笔记 2.6） | 1 分钟 |
 | 5 | `make smoke` | 显示"冒烟测试通过"。然后打开 `build/smoke/<时间>/device/snap-000.jpg` 和 `snap-003.jpg`，确认符合 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 的描述 | 75 秒 |
 | 6 | 交给用户 | 请他按 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 的人工检查清单试一遍 | — |
-| 7（可选） | Steam 成就：[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)。`make relay-pair`，设置 `ACH_RELAY="1"`，`make stubs build install`，然后 `make relay-install`（先问用户） | `./setup.sh check` 第七部分没有 `✗`；`make smoke` 显示"Steam 成就模式已启用"，并且没有 `INITIALIZE ACHIEVEMENTS: NONE`；`make relay-status` 显示 `Steam session started` | 2 分钟 |
+| 7（可选） | Steam 成就：[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)。`make relay-pair`，设置 `ACH_RELAY="1"`，`make stubs build install`，然后 `make relay-install`（先问用户） | `./setup.sh check` 第七部分没有 `✗`；`make smoke` 显示"Steam 成就模式已启用"和"游戏用 Steam 记成就"；`make relay-status` 显示 `Steam session started` | 2 分钟 |
 
 参考结果列在 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 里。
 
@@ -33,8 +33,8 @@ English: [AGENTS.md](AGENTS.md)
 2. 在设备上取证据，不要猜：
    - `make run` 实时输出游戏日志；`make logs` 取回 `Player.log` 和截图。
    - 崩溃：`xcrun devicectl device info files --device <id> --domain-type systemCrashLogs`，用 `xcrun devicectl device copy from` 取回最新的 `DiscoElysium-*.ips`，看触发崩溃的线程。
-   - [docs/PORTING_NOTES.zh-CN.md](docs/PORTING_NOTES.zh-CN.md) 第七节的可选诊断：`DE_SNAPSHOT_EVERY`、`DE_AUTOTAP`、`DE_AUTOKEY`、`DE_TRACE_TOUCH`、`DE_UI_DIAG`，以及单独关闭某项修复的开关。
-3. Unity 内部或游戏内部的行为，最好直接读出来确认：用 `DE_UI_DIAG` 列出类和方法（它会打印方法偏移），再用 `xcrun objdump -d --start-address=… --stop-address=… build/Frameworks/GameAssembly.framework/GameAssembly` 反汇编。Unity 播放器库则用 `ar -x` 取出对象文件，`segedit -extract __LLVM __bitcode`，再 `clang -S -emit-llvm`。
+   - [docs/PORTING_NOTES.zh-CN.md](docs/PORTING_NOTES.zh-CN.md) 第七节的可选诊断：`DE_SNAPSHOT_EVERY`、`DE_AUTOTAP`、`DE_AUTOKEY`、`DE_TRACE_TOUCH`、`DE_UI_DIAG`、`DE_CLASS_DIAG`、`DE_ACH_TEST`，以及单独关闭某项修复的开关。
+3. Unity 内部或游戏内部的行为，最好直接读出来确认：用 `DE_CLASS_DIAG`（或 `DE_UI_DIAG`）列出类和方法（会打印方法偏移），再用 `xcrun objdump -d --start-address=… --stop-address=… build/Frameworks/GameAssembly.framework/GameAssembly` 反汇编。Unity 播放器库则用 `ar -x` 取出对象文件，`segedit -extract __LLVM __bitcode`，再 `clang -S -emit-llvm`。
 4. 把学到的东西记进 [docs/PORTING_NOTES.zh-CN.md](docs/PORTING_NOTES.zh-CN.md)（中英文都要）。
 
 ## 用户的副本不一样时

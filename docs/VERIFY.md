@@ -71,7 +71,8 @@ Only with `ACH_RELAY=1`; see [ACHIEVEMENTS.md](ACHIEVEMENTS.md).
 | `./setup.sh check` | Section 7 has no `✗` |
 | `make achievements` (Steam open and logged in; read-only) | One line per achievement (`✓` or `·`), ending with "Unlocked N of 45" |
 | `make relay DRY_RUN=1` in one terminal, then start the game on the iPad | The relay prints `iPad connected` and `Steam session started`; `Player.log` has `[DEPort] steam relay: connected to the Mac: …` |
-| `make smoke` | Three more checks: "Steam achievement mode on", "The game initialized an achievement backend", and no `INITIALIZE ACHIEVEMENTS: NONE` |
+| `make smoke` | Two more checks: "Steam achievement mode on" and "The game uses Steam for achievements" (`INITIALIZE ACHIEVEMENTS:  STEAM`; one earlier `NONE` line is normal) |
+| Path test, nothing unlocked: launch with `DEVICECTL_CHILD_DE_LOG_TO_CONSOLE=1 DEVICECTL_CHILD_DE_ACH_TEST="40:ACH_DE_RELAY_TEST"` (see "Navigating automatically" for the launch command) | `achievement test: Achievements.Set(ACH_DE_RELAY_TEST) returned 1`, `achievement ACH_DE_RELAY_TEST recorded`, then `Steam does not know ACH_DE_RELAY_TEST; dropped`; the relay logs `Unknown achievement ACH_DE_RELAY_TEST, dropped` |
 | Unlock an achievement in the game (with `make relay` running without `DRY_RUN`) | `Player.log`: `achievement … recorded`, then `… committed to Steam`; it shows on your Steam profile |
 
 ## Manual checklist

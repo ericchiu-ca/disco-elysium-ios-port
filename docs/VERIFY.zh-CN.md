@@ -71,7 +71,8 @@ make smoke
 | `./setup.sh check` | 第七部分没有 `✗` |
 | `make achievements`（Steam 已打开并登录；只读） | 每个成就一行（`✓` 或 `·`），最后是"已解锁 N / 45" |
 | 在一个终端里运行 `make relay DRY_RUN=1`，然后在 iPad 上启动游戏 | 转发服务输出 `iPad connected` 和 `Steam session started`；`Player.log` 里有 `[DEPort] steam relay: connected to the Mac: …` |
-| `make smoke` | 多出三项检查："Steam 成就模式已启用"、"游戏初始化了成就后端"，以及没有 `INITIALIZE ACHIEVEMENTS: NONE` |
+| `make smoke` | 多出两项检查："Steam 成就模式已启用"和"游戏用 Steam 记成就"（`INITIALIZE ACHIEVEMENTS:  STEAM`；之前出现一行 `NONE` 是正常的） |
+| 链路测试，不解锁任何东西：启动时加上 `DEVICECTL_CHILD_DE_LOG_TO_CONSOLE=1 DEVICECTL_CHILD_DE_ACH_TEST="40:ACH_DE_RELAY_TEST"`（启动命令见"自动操作"） | 依次出现 `achievement test: Achievements.Set(ACH_DE_RELAY_TEST) returned 1`、`achievement ACH_DE_RELAY_TEST recorded`、`Steam does not know ACH_DE_RELAY_TEST; dropped`；转发服务记下 `Unknown achievement ACH_DE_RELAY_TEST, dropped` |
 | 在游戏里解锁一个成就（`make relay` 不带 `DRY_RUN` 运行） | `Player.log`：先是 `achievement … recorded`，然后是 `… committed to Steam`；你的 Steam 个人资料上能看到它 |
 
 ## 人工检查清单

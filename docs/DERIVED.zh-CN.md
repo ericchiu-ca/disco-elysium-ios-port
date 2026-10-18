@@ -25,6 +25,8 @@ English: [DERIVED.md](DERIVED.md)
 | `shell/src/DEBootstrap.mm` | 游戏原生插件的名称（`steam_api`、`GalaxyCSharpGlue`、`InControlNative`、`AmplifyTextureNative`）和 Mono 使用的 Mac 版 CFNetwork 路径 | 游戏查找原生库时，要把它们重定向到 App 内的 framework |
 | `shell/stubs/steam_api_overrides.c` | 四个公开的 Steamworks 函数名及其签名 | 它们必须明确报告"Steam 不可用"（其中一个用 0 表示成功，通用的"返回 0"桩会出错） |
 | `shell/stubs/steam_relay.c`（可选的成就模式） | 游戏绑定的 Steamworks 函数名及签名，三个回调的编号（1101–1103）和按 4 字节对齐的布局，几种语言在 Steam 里的名称 | 桩库必须正好回应游戏发出的调用，而且布局要和游戏里的 Steamworks.NET 读取的一致 |
+| `shell/stubs/galaxy_relay.c`（成就模式） | 一个 GOG Galaxy 胶水层函数名（`CSharp_GalaxyfApi_User___`） | 它必须返回非空对象，游戏检查 GOG 登录时才不会抛出异常（移植笔记 10.2） |
+| `shell/src/DEClassDiag.mm` | 几个游戏类和方法的名称（`Achievements.Set`、`get_Platform`、`LogWarningIfPlatformIsNone`、`SteamAchievements.Set`、`SteamManager.get_Initialized`） | 可选的链路测试通过 il2cpp 反射调用它们；它们的作用是反汇编自己那份游戏得知的 |
 | `tools/steam_relay.py` | Steamworks 扁平接口的函数名，包括带版本号的取接口函数（`SteamAPI_SteamUserStats_v012`、`SteamAPI_SteamUser_v021`、`SteamAPI_SteamFriends_v017`、`SteamAPI_SteamApps_v008`），以及 Steam 缓存统计值定义所用的 Valve 二进制 KeyValues 格式 | 用官方接口驱动你 Mac 上的 Steam 客户端，并找出游戏的统计值名称 |
 | `config.example.env`、`setup.sh`、`docs/` | Unity 版本、changeset 和 Unity 官方包的 SHA-256；游戏的构建字符串；游戏公开的 Steam App ID（632470），以及示例里提到的成就 ID | 用来下载并校验正确的运行时，并告诉用户支持哪一份游戏 |
 

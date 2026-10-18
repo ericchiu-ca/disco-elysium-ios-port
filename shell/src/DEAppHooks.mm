@@ -19,6 +19,7 @@ extern "C" void DEForceLandscape(void);
 extern "C" void DETouchOverlayAttach(UIView* view);
 extern "C" void DEAspectStart(void);
 extern "C" void DEUIDiagSchedule(void);
+extern "C" void DEClassDiagSchedule(void);
 
 static IMP gOrigCreateUI;
 
@@ -32,6 +33,7 @@ static void DE_createUI(UnityAppController* self, SEL _cmd)
     DETouchOverlayAttach(unityView);
     DEAspectStart();
     DEUIDiagSchedule();
+    DEClassDiagSchedule();
 }
 
 __attribute__((constructor)) static void InstallAppHooks(void)

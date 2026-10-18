@@ -39,7 +39,7 @@ English: [README.md](README.md)
 | 输入 | 轻点、悬停、拖动、双击跑步、右键、滚轮；一个用于高亮可交互物的按钮 |
 | 游戏 | 新游戏、开场对话、读取存档、在第一个区域里游玩，都已在设备上测试 |
 | 内存 | 游戏中约 5.8 GB，距系统强制结束还有约 6.5 GB 余量 |
-| Steam 成就 | 可选：在 iPad 上记录，通过你 Mac 上的 Steam 客户端提交（[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)）。Mac 端已测试；iPad 上的完整流程尚未验证 |
+| Steam 成就 | 可选：在 iPad 上记录，通过你 Mac 上的 Steam 客户端提交（[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)）。已在 iPad 上用测试名字验证到 Steam 回复为止；真实成就到达 Steam 尚未观察到 |
 
 ## 原理
 

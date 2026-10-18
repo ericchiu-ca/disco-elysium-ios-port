@@ -764,6 +764,8 @@ DE_EXPORT bool SteamAPI_ISteamUserStats_RequestCurrentStats(void *self)
 {
     (void)self;
     relay_start();
+    static int logged;
+    if (!logged) { logged = 1; relay_log("the game requested its stats"); }
     pthread_mutex_lock(&g_lock);
     UserStatsReceived r = { DE_STEAM_APP_ID, kResultOK, g_steam_id };
     push_callback(kUserStatsReceived, &r, sizeof r);
