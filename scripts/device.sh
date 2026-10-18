@@ -25,9 +25,11 @@ case "$cmd" in
   push-data)
     [[ -f "$DATA_OUT/de-port.json" ]] || die "$(m "先运行 make data" "Run make data first")"
     log "$(m "推送 " "Pushing ")$(du -sh "$DATA_OUT" | cut -f1)$(m " 游戏数据到 $DEV（首次较慢；之后只传变化的文件）" " of game data to $DEV (slow the first time; afterwards only changed files are transferred)")"
+    # 不能加 --remove-existing-content true：它清空的是 Documents 整个目录（实测），存档 SaveGames、Logs 等会一起被删
+    # Never add --remove-existing-content true: it empties the whole Documents directory (tested), deleting SaveGames, Logs and the rest
     xcrun devicectl device copy to --device "$DEV" \
       --domain-type appDataContainer --domain-identifier "$BUNDLE_ID" \
-      --source "$DATA_OUT" --destination Documents/GameData --remove-existing-content true
+      --source "$DATA_OUT" --destination Documents/GameData
     ;;
   run)
     # SNAPSHOT_EVERY=<秒>：调试用，定时把画面存到 Documents/Logs/snap-*.jpg（make logs 取回）

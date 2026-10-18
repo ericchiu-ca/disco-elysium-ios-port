@@ -34,4 +34,6 @@ mv "$tmp/TargetSupport.pkg.tmp/Payload/iOSSupport" "$IOS_SUPPORT"
 rm -rf "$tmp"
 
 require_ios_support
-log "$(m "完成" "Done")"
+# 与"已就绪"分支输出同一行：docs/VERIFY.md 的门槛认的就是这一行
+# Print the same line as the "already there" branch: it is the line the gate in docs/VERIFY.md looks for
+log "$(m "Unity iOS 运行时已就绪：$IOS_SUPPORT" "Unity iOS runtime is ready: $IOS_SUPPORT")"

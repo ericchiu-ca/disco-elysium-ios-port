@@ -16,10 +16,10 @@ English: [AGENTS.md](AGENTS.md)
 
 | 步骤 | 命令 | 门槛（满足后才能进入下一步） | 大致耗时 |
 |---|---|---|---|
-| 1 | `./setup.sh check` | 每一行都是 `✓`。每个 `✗` 照它下面 `→` 那行去做（或者问用户） | 几秒 |
-| 2 | `cp config.example.env config.env`，填上 `TEAM_ID` 和 `BUNDLE_ID` | `./setup.sh check` 显示两项都已设置 | — |
-| 3 | `./setup.sh` | 最后显示"准备完成"。它执行 `make fetch binaries stubs project build data`；其中 `make build` 单独就要 3–5 分钟（Unity 播放器的 LTO 链接），如果你的工具有超时限制，就放到后台跑 | 5–10 分钟 |
-| 4 | `make install push-data` | 出现 `App installed`；`push-data` 完成（约 9.6 GB，USB-C 约 20 秒）。iPad 已解锁并已配对 | 1 分钟 |
+| 1 | `cp config.example.env config.env`，用用户给的值填上 `TEAM_ID` 和 `BUNDLE_ID` | 两项都已填写（不填第 2 步过不了） | — |
+| 2 | `./setup.sh check` | 最后显示"体检通过。"：没有任何 `✗` 行。每个 `✗` 照它下面 `→` 那行去做（或者问用户）。`·` 行只是提示（例如第 3 步之前 Unity 运行时还没下载）；游戏构建那一行应当是 `✓` | 几秒 |
+| 3 | `./setup.sh` | **先问用户**（它会下载 530 MB 的 Unity 包，带签名的构建会注册 Bundle ID，见基本规矩）。想在这之前、不动用户账号就检查工具链，先跑 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 的第二级（`build-nosign`）。最后显示"准备完成"。它执行 `make fetch binaries stubs project build data`；参考环境上 `make build` 约 10 秒，`make data` 约 10 秒 | 约 1 分钟，另加下载时间 |
+| 4 | `make install push-data` | 出现 `App installed`；`push-data` 完成（约 9.6 GB，首次 USB-C 约 20 秒，之后约 1 秒）。iPad 已解锁并已配对。两者都不会动用户在 `Documents/SaveGames` 里的存档；推送时绝不要加 `--remove-existing-content`（它会清空整个 `Documents`，见移植笔记 2.6） | 1 分钟 |
 | 5 | `make smoke` | 显示"冒烟测试通过"。然后打开 `build/smoke/<时间>/device/snap-000.jpg` 和 `snap-003.jpg`，确认符合 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 的描述 | 75 秒 |
 | 6 | 交给用户 | 请他按 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 的人工检查清单试一遍 | — |
 

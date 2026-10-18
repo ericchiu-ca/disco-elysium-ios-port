@@ -23,6 +23,6 @@ English: [DERIVED.md](DERIVED.md)
 | `shell/src/DEVirtualInput.h` | 几个 `UnityEngine.KeyCode` 数值（Tab、Escape、I、J、C、T、M） | 屏幕上的高亮按钮和自动化接口发送的就是这些键 |
 | `shell/src/DEBootstrap.mm` | 游戏原生插件的名称（`steam_api`、`GalaxyCSharpGlue`、`InControlNative`、`AmplifyTextureNative`）和 Mono 使用的 Mac 版 CFNetwork 路径 | 游戏查找原生库时，要把它们重定向到 App 内的 framework |
 | `shell/stubs/steam_api_overrides.c` | 四个公开的 Steamworks 函数名及其签名 | 它们必须明确报告"Steam 不可用"（其中一个用 0 表示成功，通用的"返回 0"桩会出错） |
-| `config.example.env`、`docs/` | Unity 版本、changeset 和 Unity 官方包的 SHA-256；游戏的构建字符串 | 用来下载并校验正确的运行时，并告诉用户支持哪一份游戏 |
+| `config.example.env`、`setup.sh`、`docs/` | Unity 版本、changeset 和 Unity 官方包的 SHA-256；游戏的构建字符串 | 用来下载并校验正确的运行时，并告诉用户支持哪一份游戏 |
 
 如果你加入了这类内容，请在同一次改动里把它列到这里（中英文都要）。

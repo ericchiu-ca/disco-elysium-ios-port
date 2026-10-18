@@ -17,13 +17,13 @@ Both must finish without output.
 
 | Command | Expected |
 |---|---|
-| `./setup.sh check` | Every line `✓`, ending with "Health check passed." |
-| `make fetch` | "Unity iOS runtime is ready" (after a one-time 530 MB download whose SHA-256 is verified) |
+| `./setup.sh check` | No `✗` line, ending with "Health check passed." `·` lines are information: before `make fetch` the Unity runtime shows as not downloaded yet. "Game build matches the verified one" should be `✓` |
+| `make fetch` | Ends with "Unity iOS runtime is ready". The first time it prints "Downloading …", "Verifying SHA-256" and "Unpacking …" before that (530 MB, about 10 s at 50 MB/s; `vendor/` then takes about 2 GB) |
 | `make binaries` | `GameAssembly` dependencies listed with iOS paths only (`/System/Library/Frameworks/Foundation.framework/Foundation`, no `Versions/`) |
-| `make stubs` | Four frameworks: `GLStub`, `steam_api`, `GalaxyCSharpGlue`, `InControlNative` |
-| `make project` | Three Trampoline patches applied, the BC player-library patch generated, 62 modules and 8163 icalls registered, XcodeGen done |
-| `make build-nosign` | `** BUILD SUCCEEDED **` (the LTO link of the player library takes a few minutes) |
-| `make data` | About 2179 files: 1877 UnityFS bundles, 76 serialized files, the rest raw data. Finishes in seconds on the same volume (APFS clones) |
+| `make stubs` | Four frameworks: `GLStub` (13 empty stubs), `steam_api` (1049 empty stubs, 4 hand-written), `GalaxyCSharpGlue` (1231), `InControlNative` (32) |
+| `make project` | Four `Patched …` lines (`Filesystem.mm`, `UnityAppController.mm`, `Preprocessor.h` twice: the three patches of PORTING_NOTES §2.4), the BC player-library patch generated, 62 modules and 8163 icalls registered, XcodeGen done. The clang warning `overriding the module target triple with arm64-apple-ios12.0.0` is expected |
+| `make build-nosign` | `** BUILD SUCCEEDED **` (about 10 s on the reference Mac with an empty `build/DerivedData`) |
+| `make data` | "2179 files to process (UnityFS bundles 1877, SerializedFiles 76, raw data 226)", then "Done: … (2179 files, …)". About 10 s on the same volume; only the rewritten bundles take real space (about 4.4 GB), the rest are APFS clones |
 
 ## Level 3: on the iPad
 
@@ -31,6 +31,8 @@ Both must finish without output.
 make build install push-data
 make smoke
 ```
+
+`make install` prints `App installed:`. `make push-data` takes about 20 s the first time and about 1 s when nothing changed; afterwards `Documents/` on the iPad still holds `SaveGames`, `Logs` and `Unity` next to `GameData` (`xcrun devicectl device info files --device <id> --domain-type appDataContainer --domain-identifier <bundle id> --subdirectory Documents --no-recurse`).
 
 `make smoke` launches the installed app with no input for 75 seconds, collects the console log and a snapshot every 15 seconds into `build/smoke/<timestamp>/`, and checks:
 
@@ -51,7 +53,7 @@ make smoke
 | No crash | no `App terminated due to signal N` other than 14 (14 is the end of the timed run) | Crash report (PORTING_NOTES §7) |
 | BC textures in hardware | `[DEPort] BC textures: hardware`, and no `decompressing texture` | PORTING_NOTES §2.5 |
 
-Then look at the snapshots (by eye, or with an image-capable model):
+Then look at the snapshots (by eye, or with an image-capable model). `build/smoke/<timestamp>/device` keeps only the snapshots that this run's log says it saved: the iPad's `Documents/Logs` still holds older ones (numbering restarts at 000 on every launch), and the smoke test drops those. If `snap-003.jpg` is missing, the run ended before 60 s.
 
 | Snapshot | Expected |
 |---|---|
@@ -82,5 +84,7 @@ DEVICECTL_CHILD_DE_AUTOTAP="45:0.219,0.279" \
   perl -e 'alarm 90; exec @ARGV' xcrun devicectl device process launch --device <id> --terminate-existing --console <bundle id>
 make logs     # snapshots and Player.log land in build/logs
 ```
+
+`make logs` also brings back snapshots left by earlier runs. Use the `[DEPort] snapshot snap-NNN.jpg saved` lines of this run's console output (or the file times) to tell which ones are new.
 
 Menu positions depend on the state: with a save present the first item is "Continue" (about `0.219,0.279` in the full-screen layout); without one, "New Game" is first. Take a snapshot first, then compute the coordinates from it. Automated taps act on the real game and its saves.

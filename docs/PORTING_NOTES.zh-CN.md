@@ -45,7 +45,7 @@ App 是用 XcodeGen 生成的**单一 target**（`scripts/gen_project.sh`）：�
 
 ### 2.2 桩库（`scripts/build_stubs.sh`、`tools/gen_stub.py`）
 
-`tools/gen_stub.py` 只读取 Mac 版库的*导出函数名*，生成一个 C 文件：每个函数都返回 0，并在第一次被调用时记一条日志。手写的覆盖放在 `shell/stubs/steam_api_overrides.c`（`SteamAPI_Init` → false，`SteamAPI_RestartAppIfNecessary` → false，`SteamInternal_SteamAPI_Init` → 1 表示失败，因为它用 0 表示成功）。`GLStub` 提供 AmplifyTextureNative 导入的 13 个 `gl*` 函数，在 Metal 下永远不会被调用。
+`tools/gen_stub.py` 只读取 Mac 版库的*导出函数名*，生成一个 C 文件：每个函数都返回 0，并在第一次被调用时记一条日志。手写的覆盖放在 `shell/stubs/steam_api_overrides.c`（`SteamAPI_Init` → false，`SteamAPI_RestartAppIfNecessary` → false，`SteamAPI_IsSteamRunning` → false，`SteamInternal_SteamAPI_Init` → 1 表示失败，因为它用 0 表示成功）。`GLStub` 提供 AmplifyTextureNative 导入的 13 个 `gl*` 函数，在 Metal 下永远不会被调用。
 
 运行时，游戏的 `DllImport` 由 `shell/src/DEBootstrap.mm` 里的 `il2cpp_set_find_plugin_callback` 重定向（iOS 播放器自己不设这个回调）。同一个回调也把 Mono 使用的 Mac 版 CFNetwork 路径换成 iOS 的路径。
 
@@ -97,6 +97,8 @@ M 系列 iPad 报告 `MTLDevice.supportsBCTextureCompression = YES`。探测 `su
 | iOS 播放器期望的路径 | `StreamingAssets/` → `Raw/`，`il2cpp_data/` → `Managed/`，并换上 iOS 播放器自己的 `unity default resources` |
 
 输出的目录结构，以及为什么是 `Contents/Resources/Data`，见第四节。
+
+推送（`scripts/device.sh push-data`）：`xcrun devicectl device copy to --destination Documents/GameData` 会跳过没有变化的文件（第二次推送约 1 秒）。**不能加 `--remove-existing-content true`**：实测（Xcode 27.2）它清空的是整个 `Documents`，不只是 `GameData`，存档 `SaveGames`、`Logs`、`Unity` 会一起被删掉。代价是转换结果里删掉的文件会留在 iPad 上；数据格式变化时，先在"文件"App 里删掉 `GameData` 再推送。
 
 ## 三、设备上的启动问题
 
@@ -175,4 +177,4 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
 | Unity 版本 | 一切涉及 Unity 内部的地方：`config.example.env` 里的 `UNITY_VERSION` / changeset / SHA-256；`tools/patch_trampoline.py` 的锚点；`tools/patch_player_lib.py` 的 IR 模式（`%114` / `%120` 这类基本块标签和字段编号 52 都与版本相关）；`GraphicsFormat` 的数值（自检会拒绝启用 BC）；icall 名称；`il2cpp_*` 导出是否仍覆盖播放器的导入 |
 | 游戏构建（Unity 版本不变） | `DEAspect.mm` 里的类名和成员名（`AspectUtility`、`AspectRatioFitterUtility`、`GlobalUIFitter`）；`DEBootstrap.mm` 里的插件名；关于 `Application.platform` / `dataPath` 的假设。用 `DE_UI_DIAG` 和反汇编重新推导 |
 | 另一个有 Mac arm64 构建的 Unity IL2CPP 游戏 | 引擎这一侧（第二到第四节）是通用的；第五、六节是针对这个游戏的输入和布局代码的 |
-| Xcode / iOS SDK | 新的 UIKit 要求（就像 UIScene 这次）；LTO 链接 bitcode 播放器库需要仍能读取它的 LLVM |
+| Xcode / iOS SDK | 新的 UIKit 要求（就像 UIScene 这次）；`tools/patch_player_lib.py` 需要仍能读取 `TextureFormatMetal.o` 里 2021 年嵌入的 bitcode 的 clang（链接本身用的是每个对象文件的原生代码，没有 LTO） |

@@ -50,9 +50,9 @@ The app itself is an empty shell. The converted data lives in the app's sandbox,
     Contents/Resources/Data/         the converted Data folder (Mac .app layout, see PORTING_NOTES.md)
 ```
 
-`make push-data` copies it with `xcrun devicectl` (about 20 seconds over USB-C for a first push; later pushes send only changed files). The folder is excluded from iCloud backup. It is also visible in the Files app and in Finder's device view, because the app enables file sharing; you can delete it there to free space.
+`make push-data` copies it with `xcrun devicectl` (about 20 seconds over USB-C for a first push; later pushes send only changed files and take about a second). It writes only `Documents/GameData` and leaves the rest of `Documents/` alone. The folder is excluded from iCloud backup. It is also visible in the Files app and in Finder's device view, because the app enables file sharing; you can delete it there to free space.
 
-Saves are written by the game to `Documents/` as well, next to `GameData`.
+Saves are written by the game to `Documents/SaveGames`, next to `GameData`. Reinstalling the app keeps them (tested). They exist only on the iPad, so copy the folder out with the Files app or Finder if you want a backup.
 
 ## Why the Mac version
 

@@ -14,6 +14,10 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 source "$HERE/scripts/common.sh"
 set +e  # 体检要把每一项都跑完，不能遇错即停 | The health check must run every item instead of stopping at the first failure
 
+# 验证过的游戏构建（build_info.txt 的内容），与 docs/GAME_FILES.md 一致
+# The verified game build (the contents of build_info.txt), the same as in docs/GAME_FILES.md
+VERIFIED_GAME_BUILD="develop | 6f8a0e67 | ddb 2022-05-20 12:05 | build 1725995648 | Platform StandaloneOSX"
+
 missing=0
 NEXT=
 ok()   { echo "  ✓ $1"; }
@@ -37,7 +41,8 @@ else bad "$(m "可用磁盘空间只有 ${FREE_GB} GB，建议至少 20 GB" "Onl
 
 log "$(m "二、工具" "2. Tools")"
 if xcodebuild -version > /dev/null 2>&1; then
-  ok "$(xcodebuild -version | head -1)（iOS SDK $(xcrun --sdk iphoneos --show-sdk-version 2> /dev/null)）"
+  XV=$(xcodebuild -version | head -1); SDKV=$(xcrun --sdk iphoneos --show-sdk-version 2> /dev/null)
+  ok "$(m "$XV（iOS SDK $SDKV）" "$XV (iOS SDK $SDKV)")"
 else
   bad "$(m "缺少 Xcode（或 xcode-select 没有指向它）" "Xcode is missing (or xcode-select does not point to it)")" \
       "$(m "从 App Store 安装 Xcode，再运行 sudo xcode-select -s /Applications/Xcode.app" "Install Xcode from the App Store, then run sudo xcode-select -s /Applications/Xcode.app")"
@@ -62,8 +67,12 @@ if [[ -d "$GAME_CONTENTS" ]]; then
            "$(m "本项目只验证过 Unity $UNITY_VERSION 的版本，见 docs/GAME_FILES.zh-CN.md" "Only the Unity $UNITY_VERSION build is supported; see docs/GAME_FILES.md")"; fi
   if lipo -archs "$GAME_CONTENTS/Frameworks/GameAssembly.dylib" 2> /dev/null | grep -q arm64; then ok "$(m "GameAssembly 含 arm64" "GameAssembly contains arm64")"
   else bad "$(m "GameAssembly.dylib 缺失或不含 arm64" "GameAssembly.dylib is missing or has no arm64 slice")" "$(m "见 docs/GAME_FILES.zh-CN.md" "See docs/GAME_FILES.md")"; fi
+  # 游戏构建不一致不算缺项（可以继续），但要明确说出来：见 AGENTS.md "用户的副本不一样时"
+  # A different game build is not a missing item (you may go on), but it must be said clearly: see "If the user's copy differs" in AGENTS.md
   BUILD_INFO="$GAME_DATA/StreamingAssets/build_info.txt"
-  [[ -f "$BUILD_INFO" ]] && note "build_info: $(cat "$BUILD_INFO")"
+  GAME_BUILD=$(cat "$BUILD_INFO" 2> /dev/null)
+  if [[ "$GAME_BUILD" == "$VERIFIED_GAME_BUILD" ]]; then ok "$(m "游戏构建与验证过的一致：" "Game build matches the verified one: ")$GAME_BUILD"
+  else note "$(m "游戏构建与验证过的不同（未经验证，见 docs/PORTING_NOTES.zh-CN.md 第九节）：" "Game build differs from the verified one (unverified; see docs/PORTING_NOTES.md section 9): ")${GAME_BUILD:-?}"; fi
 else
   bad "$(m "找不到游戏：$GAME_APP" "Game not found: $GAME_APP")" \
       "$(m "在 Steam 里安装 Mac 版，或在 config.env 里设置 GAME_APP，见 docs/GAME_FILES.zh-CN.md" "Install the Mac version from Steam, or set GAME_APP in config.env; see docs/GAME_FILES.md")"

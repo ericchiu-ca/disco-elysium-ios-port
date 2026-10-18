@@ -15,7 +15,7 @@ English: [DEPENDENCIES.md](DEPENDENCIES.md)
 
 | 工具 | 测试版本 | 用途 | 获取方式 |
 |---|---|---|---|
-| Xcode（含 iOS SDK） | 27.2（27B5019j），iOS SDK 27.2 | 编译、链接（Unity 播放器库是 LLVM bitcode / LTO）、签名，以及 `devicectl`、`vtool`、`segedit`、`lipo`、`install_name_tool`、`ar`、`ranlib`、`objdump` | App Store 或 <https://developer.apple.com/xcode/> |
+| Xcode（含 iOS SDK） | 27.2（27B5019j），iOS SDK 27.2 | 编译、链接（Unity 播放器库是带嵌入 LLVM bitcode 的原生代码；BC 补丁从这份 bitcode 重新编译其中一个对象文件）、签名，以及 `devicectl`、`vtool`、`segedit`、`lipo`、`install_name_tool`、`ar`、`ranlib`、`objdump` | App Store 或 <https://developer.apple.com/xcode/> |
 | XcodeGen | 2.46.0 | 根据 `scripts/gen_project.sh` 写出的 `project.yml` 生成 Xcode 工程 | `brew install xcodegen` · <https://github.com/yonaskolb/XcodeGen> |
 | Python 3 | 3.15.0（较新的 3.x 应该都可以） | 数据转换、补丁工具、桩库与注册代码生成。**只用标准库**；LZ4 来自 macOS 自带的 `libcompression` | macOS 自带，或 `brew install python` |
 | Homebrew | — | 安装 XcodeGen | <https://brew.sh> |

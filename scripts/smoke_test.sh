@@ -24,6 +24,15 @@ DEVICECTL_CHILD_DE_LOG_TO_CONSOLE=1 DEVICECTL_CHILD_DE_SNAPSHOT_EVERY=15 \
   xcrun devicectl device process launch --device "$DEV" --terminate-existing --console "$BUNDLE_ID" > "$CONSOLE" 2>&1
 xcrun devicectl device copy from --device "$DEV" --domain-type appDataContainer --domain-identifier "$BUNDLE_ID" \
   --source Documents/Logs --destination "$OUT/device" > /dev/null 2>&1
+# Documents/Logs 里还留着以前运行的截图（编号每次从 000 开始，旧的不会被删）。只保留这次日志里写明已保存的，
+# 免得这次提前结束时，把以前的 snap-003.jpg 当成这次的结果
+# Documents/Logs still holds snapshots from earlier runs (numbering restarts at 000 and old files are not deleted).
+# Keep only those this run's log says were saved, so that if this run ends early an old snap-003.jpg is not taken for this run's result
+SAVED=$(grep -oE '\[DEPort\] snapshot snap-[0-9]+\.jpg saved' "$CONSOLE" | awk '{print $3}' | sort -u)
+for f in "$OUT/device"/snap-*.jpg; do
+  [[ -e "$f" ]] || continue
+  echo "$SAVED" | grep -qx "$(basename "$f")" || rm -f "$f"
+done
 set -e
 
 pass=0
@@ -69,6 +78,7 @@ fi
 MEM=$(grep '\[DEPort\] memory footprint' "$CONSOLE" | tail -1 | sed 's/.*memory footprint //' || true)
 [[ -n "$MEM" ]] && log "$(m "内存：" "Memory: ")$MEM"
 log "$(m "截图（每 15 秒一张）：" "Snapshots (one every 15 s): ")$OUT/device"
+echo "    $(m "这次运行保存的（以前的已去掉）：" "Saved in this run (earlier ones removed): ")$(echo ${SAVED:-$(m "无" "none")})"
 echo "    $(m "snap-000 ≈ 15 秒：启动画面（版权声明或 ZA/UM 动画）应铺满全屏，上下不露出主菜单" "snap-000 ≈ 15 s: the start-up screen (legal notice or ZA/UM animation) should fill the screen with no main menu showing at the top or bottom")"
 echo "    $(m "snap-003 ≈ 60 秒：主菜单应铺满全屏、横屏、无黑边" "snap-003 ≈ 60 s: the main menu should fill the screen, landscape, without black bars")"
 

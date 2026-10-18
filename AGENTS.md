@@ -16,10 +16,10 @@ This repository turns a user's own Mac copy of Disco Elysium – The Final Cut i
 
 | Step | Command | Gate (must hold before moving on) | Typical time |
 |---|---|---|---|
-| 1 | `./setup.sh check` | Every line `✓`. For each `✗`, do what its `→` line says (or ask the user) | seconds |
-| 2 | `cp config.example.env config.env`, fill `TEAM_ID` and `BUNDLE_ID` | `./setup.sh check` shows both | — |
-| 3 | `./setup.sh` | Ends with "All set". This runs `make fetch binaries stubs project build data`; `make build` alone takes 3–5 min (LTO link of the Unity player), so run it in the background if your tool times out | 5–10 min |
-| 4 | `make install push-data` | `App installed`; `push-data` completes (about 9.6 GB, ~20 s over USB-C). iPad unlocked and paired | 1 min |
+| 1 | `cp config.example.env config.env`, fill `TEAM_ID` and `BUNDLE_ID` with the user's values | Both are set (without them step 2 cannot pass) | — |
+| 2 | `./setup.sh check` | Ends with "Health check passed.": no `✗` line. For each `✗`, do what its `→` line says (or ask the user). `·` lines are information only (for example, the Unity runtime is not downloaded before step 3); the game build line should be `✓` | seconds |
+| 3 | `./setup.sh` | **Ask the user first** (it downloads the 530 MB Unity package and the signed build registers the bundle ID, see the ground rules). To check the toolchain before that without touching their account, run level 2 of [docs/VERIFY.md](docs/VERIFY.md) (`build-nosign`). Ends with "All set". This runs `make fetch binaries stubs project build data`; on the reference Mac `make build` takes about 10 s and `make data` about 10 s | about 1 min plus the download |
+| 4 | `make install push-data` | `App installed`; `push-data` completes (about 9.6 GB, ~20 s over USB-C the first time, about 1 s afterwards). iPad unlocked and paired. Both keep the user's saves in `Documents/SaveGames`; never add `--remove-existing-content` to the push (it empties all of `Documents`, see PORTING_NOTES §2.6) | 1 min |
 | 5 | `make smoke` | "Smoke test PASSED". Then open `build/smoke/<time>/device/snap-000.jpg` and `snap-003.jpg` and confirm what [docs/VERIFY.md](docs/VERIFY.md) describes | 75 s |
 | 6 | Hand over to the user | Ask them to run the manual checklist in [docs/VERIFY.md](docs/VERIFY.md) | — |
 

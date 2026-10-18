@@ -9,7 +9,7 @@ The checks are described in [docs/VERIFY.md](docs/VERIFY.md). In short:
 | Level | Commands | Needs |
 |---|---|---|
 | 1 | `bash -n` on every script, `python3 -I -m py_compile tools/*.py` | Nothing |
-| 2 | `./setup.sh check`, `make project build-nosign`, `make data` | Your Mac copy of the game |
+| 2 | `./setup.sh check`, `make fetch binaries stubs project build-nosign data` (`make project` needs the output of `binaries` and `stubs`) | Your Mac copy of the game |
 | 3 | `make build install push-data`, `make smoke`, the manual checklist | An M-series iPad and a developer account |
 
 Run the levels your change can affect, and say in the pull request which ones you ran.

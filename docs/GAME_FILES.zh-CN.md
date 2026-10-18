@@ -50,9 +50,9 @@ App 本身只是一个空壳。转换后的数据放在 App 的沙盒里，所�
     Contents/Resources/Data/         转换后的 Data 目录（Mac .app 的目录结构，原因见 PORTING_NOTES.zh-CN.md）
 ```
 
-`make push-data` 用 `xcrun devicectl` 推送（首次通过 USB-C 约 20 秒，之后只传有变化的文件）。这个目录已设置为不参与 iCloud 备份。由于 App 开启了文件共享，它在"文件"App 和 Finder 的设备页面里也能看到，需要释放空间时可以在那里删除。
+`make push-data` 用 `xcrun devicectl` 推送（首次通过 USB-C 约 20 秒，之后只传有变化的文件，约 1 秒）。它只写 `Documents/GameData`，不动 `Documents/` 里的其他内容。这个目录已设置为不参与 iCloud 备份。由于 App 开启了文件共享，它在"文件"App 和 Finder 的设备页面里也能看到，需要释放空间时可以在那里删除。
 
-游戏存档同样写在 `Documents/` 里，和 `GameData` 并列。
+游戏存档写在 `Documents/SaveGames` 里，和 `GameData` 并列。重装 App 不会丢存档（实测）。存档只在 iPad 上，想备份的话用"文件"App 或 Finder 把这个目录拷出来。
 
 ## 为什么用 Mac 版
 

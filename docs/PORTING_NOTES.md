@@ -45,7 +45,7 @@ The binaries use classic `LC_DYLD_INFO_ONLY` (no chained fixups), so nothing els
 
 ### 2.2 Stubs (`scripts/build_stubs.sh`, `tools/gen_stub.py`)
 
-`tools/gen_stub.py` reads only the *export names* of the Mac libraries and emits a C file where every function returns 0 and logs its first call. Hand-written overrides live in `shell/stubs/steam_api_overrides.c` (`SteamAPI_Init` → false, `SteamAPI_RestartAppIfNecessary` → false, and `SteamInternal_SteamAPI_Init` → 1 = failure, because 0 means success there). `GLStub` provides the 13 `gl*` functions that AmplifyTextureNative imports; they are never called under Metal.
+`tools/gen_stub.py` reads only the *export names* of the Mac libraries and emits a C file where every function returns 0 and logs its first call. Hand-written overrides live in `shell/stubs/steam_api_overrides.c` (`SteamAPI_Init` → false, `SteamAPI_RestartAppIfNecessary` → false, `SteamAPI_IsSteamRunning` → false, and `SteamInternal_SteamAPI_Init` → 1 = failure, because 0 means success there). `GLStub` provides the 13 `gl*` functions that AmplifyTextureNative imports; they are never called under Metal.
 
 At run time the game's `DllImport`s are redirected by `il2cpp_set_find_plugin_callback` in `shell/src/DEBootstrap.mm` (the iOS player does not set one). The same callback maps Mono's Mac CFNetwork path to the iOS one.
 
@@ -97,6 +97,8 @@ M-series iPads report `MTLDevice.supportsBCTextureCompression = YES`. Probing `s
 | Paths the iOS player expects | `StreamingAssets/` → `Raw/`, `il2cpp_data/` → `Managed/`, plus the iOS player's own `unity default resources` |
 
 Output layout and the reason for `Contents/Resources/Data`: see section 4.
+
+Pushing (`scripts/device.sh push-data`): `xcrun devicectl device copy to --destination Documents/GameData` skips unchanged files (a second push takes about 1 s). **Never add `--remove-existing-content true`**: tested with Xcode 27.2, it empties the whole `Documents`, not just `GameData`, so the saves in `SaveGames`, `Logs` and `Unity` are deleted with it. The price is that files removed from the converted data stay on the iPad; when the data format changes, delete `GameData` in the Files app before pushing.
 
 ## 3. Start-up problems on the device
 
@@ -175,4 +177,4 @@ Crash reports: `xcrun devicectl device info files --device <id> --domain-type sy
 | Unity version | Everything that touches Unity internals: `UNITY_VERSION` / changeset / SHA-256 in `config.example.env`; the anchors in `tools/patch_trampoline.py`; the IR patterns in `tools/patch_player_lib.py` (block labels such as `%114` / `%120` and the field index 52 are version-specific); the `GraphicsFormat` numbers (the self-check will refuse to enable BC); the icall names; whether `il2cpp_*` exports still cover the player's imports |
 | Game build, same Unity | Class and member names in `DEAspect.mm` (`AspectUtility`, `AspectRatioFitterUtility`, `GlobalUIFitter`); the plugin names in `DEBootstrap.mm`; the assumptions about `Application.platform` / `dataPath`. Use `DE_UI_DIAG` and disassembly to re-derive them |
 | Another Unity IL2CPP game with a Mac arm64 build | The engine side (sections 2–4) is generic; sections 5–6 are specific to this game's input and layout code |
-| Xcode / iOS SDK | New UIKit requirements (as with UIScene); the LTO link of the bitcode player library needs an LLVM that can still read it |
+| Xcode / iOS SDK | New UIKit requirements (as with UIScene); `tools/patch_player_lib.py` needs a clang that can still read the 2021 bitcode embedded in `TextureFormatMetal.o` (linking itself uses the native code of every object, there is no LTO) |

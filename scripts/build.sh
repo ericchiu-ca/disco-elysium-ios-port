@@ -11,7 +11,7 @@ SIGN_ARGS=(-allowProvisioningUpdates DEVELOPMENT_TEAM="$TEAM_ID")
 if [[ "${1:-}" == "--no-sign" ]]; then SIGN_ARGS=(CODE_SIGNING_ALLOWED=NO); fi
 
 LOGFILE="$BUILD/xcodebuild.log"
-log "$(m "xcodebuild（Unity 播放器是 LTO 库，链接需要几分钟）日志：$LOGFILE" "xcodebuild (the Unity player is an LTO library, so linking takes a few minutes), log: $LOGFILE")"
+log "$(m "xcodebuild（参考环境 M5 Mac 上约 10 秒）日志：$LOGFILE" "xcodebuild (about 10 s on the reference M5 Mac), log: $LOGFILE")"
 set +e
 xcodebuild -project "$XCODE_OUT/DiscoElysium.xcodeproj" -scheme DiscoElysium -configuration Release \
   -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$BUILD/DerivedData" \

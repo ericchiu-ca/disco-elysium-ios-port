@@ -17,13 +17,13 @@ python3 -I -m py_compile tools/*.py && rm -rf tools/__pycache__
 
 | 命令 | 期望 |
 |---|---|
-| `./setup.sh check` | 每一行都是 `✓`，最后是"体检通过。" |
-| `make fetch` | "Unity iOS 运行时已就绪"（首次需要下载 530 MB，并校验 SHA-256） |
+| `./setup.sh check` | 没有任何 `✗` 行，最后是"体检通过。"。`·` 行只是提示：`make fetch` 之前 Unity 运行时会显示尚未下载。"游戏构建与验证过的一致"应当是 `✓` |
+| `make fetch` | 最后一行是"Unity iOS 运行时已就绪"。第一次在这之前还会输出"下载 …"、"校验 SHA-256"、"解包到 …"（530 MB，按 50 MB/s 约 10 秒；之后 `vendor/` 约占 2 GB） |
 | `make binaries` | 列出的 `GameAssembly` 依赖只有 iOS 路径（`/System/Library/Frameworks/Foundation.framework/Foundation`，没有 `Versions/`） |
-| `make stubs` | 四个 framework：`GLStub`、`steam_api`、`GalaxyCSharpGlue`、`InControlNative` |
-| `make project` | 三处 Trampoline 补丁已修改、BC 播放器库补丁已生成、注册了 62 个模块和 8163 个 icall、XcodeGen 完成 |
-| `make build-nosign` | `** BUILD SUCCEEDED **`（播放器库的 LTO 链接需要几分钟） |
-| `make data` | 约 2179 个文件：1877 个 UnityFS 包、76 个序列化文件，其余是原始数据。同一卷上几秒完成（APFS 克隆） |
+| `make stubs` | 四个 framework：`GLStub`（13 个空桩）、`steam_api`（1049 个空桩、4 个手写）、`GalaxyCSharpGlue`（1231）、`InControlNative`（32） |
+| `make project` | 四行 `Patched …`（`Filesystem.mm`、`UnityAppController.mm`、`Preprocessor.h` 两次：即移植笔记 2.4 的三处补丁）、BC 播放器库补丁已生成、注册了 62 个模块和 8163 个 icall、XcodeGen 完成。clang 的警告 `overriding the module target triple with arm64-apple-ios12.0.0` 是正常的 |
+| `make build-nosign` | `** BUILD SUCCEEDED **`（参考环境上、`build/DerivedData` 为空时约 10 秒） |
+| `make data` | "待处理 2179 个文件（UnityFS 包 1877、SerializedFile 76、原始数据 226）"，然后是"完成：…（2179 个文件，…）"。同一卷上约 10 秒；只有重写过的包真正占空间（约 4.4 GB），其余都是 APFS 克隆 |
 
 ## 第三级：在 iPad 上
 
@@ -31,6 +31,8 @@ python3 -I -m py_compile tools/*.py && rm -rf tools/__pycache__
 make build install push-data
 make smoke
 ```
+
+`make install` 输出 `App installed:`。`make push-data` 首次约 20 秒，没有变化时约 1 秒；推送之后 iPad 上的 `Documents/` 里，`SaveGames`、`Logs`、`Unity` 仍然和 `GameData` 并列（`xcrun devicectl device info files --device <id> --domain-type appDataContainer --domain-identifier <bundle id> --subdirectory Documents --no-recurse`）。
 
 `make smoke` 启动已安装的 App，不做任何输入，运行 75 秒；把控制台日志和每 15 秒一张的截图收集到 `build/smoke/<时间>/`，并检查：
 
@@ -51,7 +53,7 @@ make smoke
 | 没有崩溃 | 除 14 以外没有 `App terminated due to signal N`（14 是计时结束） | 崩溃报告（移植笔记第七节） |
 | BC 纹理走硬件 | `[DEPort] BC textures: hardware`，且没有 `decompressing texture` | 移植笔记 2.5 |
 
-然后看截图（人工看，或者用能看图的模型）：
+然后看截图（人工看，或者用能看图的模型）。`build/smoke/<时间>/device` 里只保留这次日志写明已保存的截图：iPad 的 `Documents/Logs` 里还留着以前的（每次启动编号都从 000 开始），冒烟测试会把它们去掉。如果没有 `snap-003.jpg`，说明这次运行不到 60 秒就结束了。
 
 | 截图 | 期望 |
 |---|---|
@@ -82,5 +84,7 @@ DEVICECTL_CHILD_DE_AUTOTAP="45:0.219,0.279" \
   perl -e 'alarm 90; exec @ARGV' xcrun devicectl device process launch --device <id> --terminate-existing --console <bundle id>
 make logs     # 截图和 Player.log 会取回到 build/logs
 ```
+
+`make logs` 也会把以前运行留下的截图一起取回来。用这次控制台输出里的 `[DEPort] snapshot snap-NNN.jpg saved` 行（或文件时间）分辨哪些是新的。
 
 菜单位置取决于状态：有存档时第一项是"继续游戏"（铺满屏幕的布局下约为 `0.219,0.279`）；没有存档时第一项是"新游戏"。先截一张图，再按图计算坐标。自动点击作用于真实的游戏和存档。

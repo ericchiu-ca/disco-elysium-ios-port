@@ -15,7 +15,7 @@
 
 | Tool | Version tested | Used for | Where to get it |
 |---|---|---|---|
-| Xcode (with the iOS SDK) | 27.2 (27B5019j), iOS SDK 27.2 | Compiling, linking (the Unity player library is LLVM bitcode/LTO), signing, `devicectl`, `vtool`, `segedit`, `lipo`, `install_name_tool`, `ar`, `ranlib`, `objdump` | App Store or <https://developer.apple.com/xcode/> |
+| Xcode (with the iOS SDK) | 27.2 (27B5019j), iOS SDK 27.2 | Compiling, linking (the Unity player library is native code with embedded LLVM bitcode; the BC patch recompiles one object from that bitcode), signing, `devicectl`, `vtool`, `segedit`, `lipo`, `install_name_tool`, `ar`, `ranlib`, `objdump` | App Store or <https://developer.apple.com/xcode/> |
 | XcodeGen | 2.46.0 | Generating the Xcode project from the `project.yml` written by `scripts/gen_project.sh` | `brew install xcodegen` · <https://github.com/yonaskolb/XcodeGen> |
 | Python 3 | 3.15.0 (any recent 3.x should work) | Data conversion, patch tools, stub and registration generators. **Standard library only**; LZ4 comes from macOS's `libcompression` | Ships with macOS, or `brew install python` |
 | Homebrew | — | Installing XcodeGen | <https://brew.sh> |

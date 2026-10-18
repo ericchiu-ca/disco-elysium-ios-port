@@ -23,6 +23,6 @@ Only names, numbers and short anchors needed to interoperate with your own copy 
 | `shell/src/DEVirtualInput.h` | A few `UnityEngine.KeyCode` values (Tab, Escape, I, J, C, T, M) | The on-screen highlight button and the automation hooks send these keys |
 | `shell/src/DEBootstrap.mm` | The names of the game's native plugins (`steam_api`, `GalaxyCSharpGlue`, `InControlNative`, `AmplifyTextureNative`) and the Mac path of CFNetwork used by Mono | Native library lookups from the game are redirected to the frameworks inside the app |
 | `shell/stubs/steam_api_overrides.c` | Four public Steamworks function names with their signatures | They must report "Steam is not available" explicitly (one of them returns 0 for success, so the generic "return 0" stub would be wrong) |
-| `config.example.env`, `docs/` | The Unity version, changeset and the SHA-256 of Unity's official package; the game's build string | To download and verify the right runtime, and to tell users which copy of the game is supported |
+| `config.example.env`, `setup.sh`, `docs/` | The Unity version, changeset and the SHA-256 of Unity's official package; the game's build string | To download and verify the right runtime, and to tell users which copy of the game is supported |
 
 If you add anything of this kind, list it here (in both languages) in the same change.

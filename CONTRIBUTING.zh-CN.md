@@ -9,7 +9,7 @@ English: [CONTRIBUTING.md](CONTRIBUTING.md)
 | 级别 | 命令 | 需要 |
 |---|---|---|
 | 1 | 每个脚本跑 `bash -n`，`python3 -I -m py_compile tools/*.py` | 什么都不需要 |
-| 2 | `./setup.sh check`、`make project build-nosign`、`make data` | 你的 Mac 版游戏 |
+| 2 | `./setup.sh check`、`make fetch binaries stubs project build-nosign data`（`make project` 需要 `binaries` 和 `stubs` 的产物） | 你的 Mac 版游戏 |
 | 3 | `make build install push-data`、`make smoke`、人工检查清单 | M 系列 iPad 和开发者账号 |
 
 跑你的改动可能影响到的那几级，并在 PR 里写明跑了哪些。
