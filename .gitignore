@@ -1,0 +1,32 @@
+# 第三方下载（Unity iOS 运行时），由 scripts/fetch_unity_ios.sh 生成；不能进仓库
+# Third-party downloads (the Unity iOS runtime), created by scripts/fetch_unity_ios.sh; must never be committed
+/vendor/
+
+# 全部构建产物：改标后的二进制、转换后的游戏数据、生成的 Xcode 工程、日志与截图
+# All build output: retagged binaries, converted game data, the generated Xcode project, logs and snapshots
+/build/
+
+# 本机配置（团队 ID、Bundle ID、设备）
+# Local configuration (Team ID, bundle ID, device)
+/config.env
+
+# 任何游戏内容都不进仓库（多一道保险）
+# No game content ever enters the repository (an extra safeguard)
+*.assets
+*.resS
+*.resource
+*.bundle
+*.vtc
+*.vtc2
+*.ips
+*.jpg
+global-metadata.dat
+GameAssembly*
+UnityPlayer*
+libiPhone-lib*
+
+.DS_Store
+__pycache__/
+*.pyc
+xcuserdata/
+DerivedData/

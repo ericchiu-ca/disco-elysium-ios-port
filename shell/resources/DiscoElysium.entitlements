@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 游戏是为桌面 8 GB 内存设计的，需要提高 iPadOS 默认的单 App 内存上限 -->
+	<!-- The game was designed for desktops with 8 GB of memory, so iPadOS's default per-app memory limit must be raised -->
+	<key>com.apple.developer.kernel.increased-memory-limit</key>
+	<true/>
+	<!-- 大量资源文件与 IL2CPP 堆需要更大的虚拟地址空间 -->
+	<!-- The large number of asset files and the IL2CPP heap need a larger virtual address space -->
+	<key>com.apple.developer.kernel.extended-virtual-addressing</key>
+	<true/>
+</dict>
+</plist>
