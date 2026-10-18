@@ -62,6 +62,18 @@ make smoke
 
 参考值：主菜单内存占用约 4.9 GB，游戏中约 5.8 GB，距系统强制结束还有约 6.5 GB 余量（iPad Pro 11 英寸 M5）。
 
+## 成就模式（可选）
+
+只在 `ACH_RELAY=1` 时适用，见 [ACHIEVEMENTS.zh-CN.md](ACHIEVEMENTS.zh-CN.md)。
+
+| 步骤 | 期望 |
+|---|---|
+| `./setup.sh check` | 第七部分没有 `✗` |
+| `make achievements`（Steam 已打开并登录；只读） | 每个成就一行（`✓` 或 `·`），最后是"已解锁 N / 45" |
+| 在一个终端里运行 `make relay DRY_RUN=1`，然后在 iPad 上启动游戏 | 转发服务输出 `iPad connected` 和 `Steam session started`；`Player.log` 里有 `[DEPort] steam relay: connected to the Mac: …` |
+| `make smoke` | 多出三项检查："Steam 成就模式已启用"、"游戏初始化了成就后端"，以及没有 `INITIALIZE ACHIEVEMENTS: NONE` |
+| 在游戏里解锁一个成就（`make relay` 不带 `DRY_RUN` 运行） | `Player.log`：先是 `achievement … recorded`，然后是 `… committed to Steam`；你的 Steam 个人资料上能看到它 |
+
 ## 人工检查清单
 
 | 操作 | 期望 |

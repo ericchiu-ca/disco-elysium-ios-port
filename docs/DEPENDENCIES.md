@@ -9,6 +9,7 @@
 | An Apple silicon Mac | Building, converting the data, installing | Tested on an M5 Mac with macOS 27.2. About 20 GB of free disk space is recommended |
 | Your own Mac copy of the game | All game code and data | See [GAME_FILES.md](GAME_FILES.md). The repository contains no game files |
 | An Apple developer account | Signing the app and installing it on your own iPad | **Paid account** (tested). The app requests the *Increased Memory Limit* and *Extended Virtual Addressing* entitlements, which a free personal team may not be able to sign; a free account is untested. Xcode automatic signing registers your bundle ID and creates the provisioning profile the first time `make build` runs |
+| Steam for Mac (only for the optional achievement sync) | Committing your achievements | Logged in with the account that owns the game. See [ACHIEVEMENTS.md](ACHIEVEMENTS.md) |
 | An iPad with an M-series chip | Running the game | Tested on iPad Pro 11-inch (M5), iPadOS 27.2. The game textures are BC-compressed: M-series GPUs decode them in hardware. A-series iPads would fall back to CPU decompression (much more memory; untested). In game the app uses about 5.8 GB of memory |
 
 ## Build tools
@@ -18,6 +19,7 @@
 | Xcode (with the iOS SDK) | 27.2 (27B5019j), iOS SDK 27.2 | Compiling, linking (the Unity player library is native code with embedded LLVM bitcode; the BC patch recompiles one object from that bitcode), signing, `devicectl`, `vtool`, `segedit`, `lipo`, `install_name_tool`, `ar`, `ranlib`, `objdump` | App Store or <https://developer.apple.com/xcode/> |
 | XcodeGen | 2.46.0 | Generating the Xcode project from the `project.yml` written by `scripts/gen_project.sh` | `brew install xcodegen` · <https://github.com/yonaskolb/XcodeGen> |
 | Python 3 | 3.15.0 (any recent 3.x should work) | Data conversion, patch tools, stub and registration generators. **Standard library only**; LZ4 comes from macOS's `libcompression` | Ships with macOS, or `brew install python` |
+| Apple's Python (`/usr/bin/python3`) | 3.9.6 | The Steam achievement relay (`tools/steam_relay.py`). Apple-signed, so the macOS firewall lets it accept the iPad's connection without a prompt | Comes with Xcode / the Command Line Tools |
 | Homebrew | — | Installing XcodeGen | <https://brew.sh> |
 | macOS built-ins | — | `curl`, `pkgutil`, `sips`, `codesign`, `security`, `perl`, `PlistBuddy` | Part of macOS |
 

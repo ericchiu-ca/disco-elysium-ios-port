@@ -75,6 +75,16 @@ else
   warn "$(m "这台设备没有启用硬件 BC 纹理（会在 CPU 上解压，内存占用更高）：" "Hardware BC textures are not enabled on this device (they are decompressed on the CPU, using more memory):") $(grep '\[DEPort\] BC textures' "$CONSOLE" | head -1)"
 fi
 
+# 成就模式（ACH_RELAY=1）：桩库已启用，游戏也选用了 Steam 成就后端（没有成就模式时它打印 NONE）
+# Achievement mode (ACH_RELAY=1): the stub is active and the game picked its Steam achievement backend (it prints NONE without achievement mode)
+if [[ "$ACH_RELAY" == 1 ]]; then
+  check "Steam 成就模式已启用" "Steam achievement mode on" '\[DEPort\] steam relay: mode on'
+  check "游戏初始化了成就后端" "The game initialized an achievement backend" 'INITIALIZE ACHIEVEMENTS: '
+  absent "游戏没有退回到无成就模式" "The game did not fall back to no achievements" 'INITIALIZE ACHIEVEMENTS: +NONE'
+  RELAY_LINE=$(grep -E '\[DEPort\] steam relay: (connected|cannot|the Mac)' "$CONSOLE" | head -1 | sed 's/.*steam relay: //' || true)
+  [[ -n "$RELAY_LINE" ]] && log "$(m "转发：" "Relay: ")$RELAY_LINE"
+fi
+
 MEM=$(grep '\[DEPort\] memory footprint' "$CONSOLE" | tail -1 | sed 's/.*memory footprint //' || true)
 [[ -n "$MEM" ]] && log "$(m "内存：" "Memory: ")$MEM"
 log "$(m "截图（每 15 秒一张）：" "Snapshots (one every 15 s): ")$OUT/device"

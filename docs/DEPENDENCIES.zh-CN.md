@@ -9,6 +9,7 @@ English: [DEPENDENCIES.md](DEPENDENCIES.md)
 | Apple 芯片的 Mac | 构建、转换数据、安装 | 在 M5 Mac、macOS 27.2 上测试。建议至少有 20 GB 可用磁盘空间 |
 | 你自己的 Mac 版游戏 | 全部游戏代码与数据 | 见 [GAME_FILES.zh-CN.md](GAME_FILES.zh-CN.md)。仓库里没有任何游戏文件 |
 | Apple 开发者账号 | 签名并安装到你自己的 iPad | **付费账号**（已测试）。App 申请了"提高内存上限"和"扩展虚拟寻址"两项权限，免费的个人团队可能无法签这两项；免费账号未测试。第一次运行 `make build` 时，Xcode 自动签名会注册你的 Bundle ID 并生成描述文件 |
+| Mac 版 Steam（只有可选的成就同步需要） | 提交你的成就 | 登录拥有这款游戏的账号。见 [ACHIEVEMENTS.zh-CN.md](ACHIEVEMENTS.zh-CN.md) |
 | M 系列芯片的 iPad | 运行游戏 | 在 iPad Pro 11 英寸（M5）、iPadOS 27.2 上测试。游戏纹理是 BC 压缩格式，M 系列 GPU 能硬件解码；A 系列 iPad 会退回 CPU 解压（内存占用高得多，未测试）。游戏中内存占用约 5.8 GB |
 
 ## 构建工具
@@ -18,6 +19,7 @@ English: [DEPENDENCIES.md](DEPENDENCIES.md)
 | Xcode（含 iOS SDK） | 27.2（27B5019j），iOS SDK 27.2 | 编译、链接（Unity 播放器库是带嵌入 LLVM bitcode 的原生代码；BC 补丁从这份 bitcode 重新编译其中一个对象文件）、签名，以及 `devicectl`、`vtool`、`segedit`、`lipo`、`install_name_tool`、`ar`、`ranlib`、`objdump` | App Store 或 <https://developer.apple.com/xcode/> |
 | XcodeGen | 2.46.0 | 根据 `scripts/gen_project.sh` 写出的 `project.yml` 生成 Xcode 工程 | `brew install xcodegen` · <https://github.com/yonaskolb/XcodeGen> |
 | Python 3 | 3.15.0（较新的 3.x 应该都可以） | 数据转换、补丁工具、桩库与注册代码生成。**只用标准库**；LZ4 来自 macOS 自带的 `libcompression` | macOS 自带，或 `brew install python` |
+| Apple 自带的 Python（`/usr/bin/python3`） | 3.9.6 | Steam 成就转发服务（`tools/steam_relay.py`）。它有 Apple 签名，macOS 防火墙会直接允许它接受 iPad 的连接，不弹提示 | 随 Xcode / Command Line Tools 提供 |
 | Homebrew | — | 安装 XcodeGen | <https://brew.sh> |
 | macOS 自带工具 | — | `curl`、`pkgutil`、`sips`、`codesign`、`security`、`perl`、`PlistBuddy` | macOS 自带 |
 

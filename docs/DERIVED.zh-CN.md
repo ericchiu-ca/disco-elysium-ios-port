@@ -7,6 +7,7 @@ English: [DERIVED.md](DERIVED.md)
 - **没有任何游戏内容**：没有游戏程序、脚本、数据、美术、文字、音频、着色器、存档或截图。`build/` 下的一切（改标后的二进制、转换后的数据、生成的工程、设备日志与截图）都由你自己的副本在你的电脑上生成，并且被 git 忽略。
 - **没有 Unity 的二进制或源码文件**：iOS 播放器库、`baselib.a`、Trampoline 和内置资源由每个用户自己从 Unity 的 CDN 下载到 `vendor/`，该目录被 git 忽略。
 - **没有从游戏原生插件复制的代码**：桩库在构建时根据你自己副本的*导出函数名*生成。
+- **没有 Steam 的二进制**：可选的成就转发加载的是你自己那份游戏里的 `libsteam_api.dylib`。
 
 ## 仓库里有的
 
@@ -23,6 +24,8 @@ English: [DERIVED.md](DERIVED.md)
 | `shell/src/DEVirtualInput.h` | 几个 `UnityEngine.KeyCode` 数值（Tab、Escape、I、J、C、T、M） | 屏幕上的高亮按钮和自动化接口发送的就是这些键 |
 | `shell/src/DEBootstrap.mm` | 游戏原生插件的名称（`steam_api`、`GalaxyCSharpGlue`、`InControlNative`、`AmplifyTextureNative`）和 Mono 使用的 Mac 版 CFNetwork 路径 | 游戏查找原生库时，要把它们重定向到 App 内的 framework |
 | `shell/stubs/steam_api_overrides.c` | 四个公开的 Steamworks 函数名及其签名 | 它们必须明确报告"Steam 不可用"（其中一个用 0 表示成功，通用的"返回 0"桩会出错） |
-| `config.example.env`、`setup.sh`、`docs/` | Unity 版本、changeset 和 Unity 官方包的 SHA-256；游戏的构建字符串 | 用来下载并校验正确的运行时，并告诉用户支持哪一份游戏 |
+| `shell/stubs/steam_relay.c`（可选的成就模式） | 游戏绑定的 Steamworks 函数名及签名，三个回调的编号（1101–1103）和按 4 字节对齐的布局，几种语言在 Steam 里的名称 | 桩库必须正好回应游戏发出的调用，而且布局要和游戏里的 Steamworks.NET 读取的一致 |
+| `tools/steam_relay.py` | Steamworks 扁平接口的函数名，包括带版本号的取接口函数（`SteamAPI_SteamUserStats_v012`、`SteamAPI_SteamUser_v021`、`SteamAPI_SteamFriends_v017`、`SteamAPI_SteamApps_v008`），以及 Steam 缓存统计值定义所用的 Valve 二进制 KeyValues 格式 | 用官方接口驱动你 Mac 上的 Steam 客户端，并找出游戏的统计值名称 |
+| `config.example.env`、`setup.sh`、`docs/` | Unity 版本、changeset 和 Unity 官方包的 SHA-256；游戏的构建字符串；游戏公开的 Steam App ID（632470），以及示例里提到的成就 ID | 用来下载并校验正确的运行时，并告诉用户支持哪一份游戏 |
 
 如果你加入了这类内容，请在同一次改动里把它列到这里（中英文都要）。

@@ -8,6 +8,7 @@ English: [AGENTS.md](AGENTS.md)
 
 - **绝不提交、上传或粘贴游戏内容和 Unity 的二进制**（`build/`、`vendor/`、截图、含大段游戏文字的日志）。见 [docs/DERIVED.zh-CN.md](docs/DERIVED.zh-CN.md)。
 - 以下操作**先问用户**：下载 530 MB 的 Unity 包（`make fetch`）、在他的开发者账号里注册 Bundle ID（第一次带签名的 `make build`）、往他的设备上安装或推送数据、以及任何对他游戏的自动点按（会作用于真实存档）。
+- 任何会写入用户 Steam 账号的操作都要**先问用户**：`make achievements-unlock`、`make achievements-sync`、不带 `DRY_RUN=1` 的 `make relay`、以及 `make relay-install`。`make achievements` 只读。测试时用 `make relay DRY_RUN=1`。绝不要输出、粘贴或提交 `ACH_RELAY_SECRET`。见 [docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)。
 - **向用户索取**：他的团队 ID、他自己的 Bundle ID、用哪台 iPad。不要沿用任何别人的值。
 - 生成的目录都是产物：修改生成它们的东西（`scripts/`、`tools/`、`shell/`），再重新生成。改 Trampoline 走 `tools/patch_trampoline.py`；改 Unity 播放器库走 `tools/patch_player_lib.py`。`shell/src/` 里新加的文件要 `make project` 才会被纳入。
 - 代码注释和文档都是中英双语（先中文后英文）；App 的日志用英文，其中一部分会被 `make smoke` 匹配。见 [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md)。
@@ -22,6 +23,7 @@ English: [AGENTS.md](AGENTS.md)
 | 4 | `make install push-data` | 出现 `App installed`；`push-data` 完成（约 9.6 GB，首次 USB-C 约 20 秒，之后约 1 秒）。iPad 已解锁并已配对。两者都不会动用户在 `Documents/SaveGames` 里的存档；推送时绝不要加 `--remove-existing-content`（它会清空整个 `Documents`，见移植笔记 2.6） | 1 分钟 |
 | 5 | `make smoke` | 显示"冒烟测试通过"。然后打开 `build/smoke/<时间>/device/snap-000.jpg` 和 `snap-003.jpg`，确认符合 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 的描述 | 75 秒 |
 | 6 | 交给用户 | 请他按 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 的人工检查清单试一遍 | — |
+| 7（可选） | Steam 成就：[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)。`make relay-pair`，设置 `ACH_RELAY="1"`，`make stubs build install`，然后 `make relay-install`（先问用户） | `./setup.sh check` 第七部分没有 `✗`；`make smoke` 显示"Steam 成就模式已启用"，并且没有 `INITIALIZE ACHIEVEMENTS: NONE`；`make relay-status` 显示 `Steam session started` | 2 分钟 |
 
 参考结果列在 [docs/VERIFY.zh-CN.md](docs/VERIFY.zh-CN.md) 里。
 
@@ -47,3 +49,4 @@ English: [AGENTS.md](AGENTS.md)
 | 游戏构建 | `develop \| 6f8a0e67 \| ddb 2022-05-20 12:05 \| build 1725995648 \| Platform StandaloneOSX`（Steam，macOS） |
 | 验证环境 | M5 Mac、macOS 27.2、Xcode 27.2（27B5019j）、XcodeGen 2.46.0、Python 3.15；iPad Pro 11 英寸（M5）、iPadOS 27.2 |
 | App | 单一 target，Bundle ID 取自 `config.env`，数据在 `Documents/GameData/Contents/Resources/Data`（格式 2） |
+| Steam（可选的成就同步） | App ID `632470`；成就模式用 `shell/stubs/steam_relay.c` 代替 `shell/stubs/steam_api_overrides.c`；Mac 上的转发服务用 `/usr/bin/python3`（Python 3.9）运行；见移植笔记第十节 |

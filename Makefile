@@ -6,10 +6,11 @@
 SHELL := /bin/bash
 S := scripts
 
-.PHONY: help check all fetch binaries stubs project build build-nosign data install push-data run logs smoke clean distclean
+.PHONY: help check all fetch binaries stubs project build build-nosign data install push-data run logs smoke clean distclean \
+        achievements achievements-unlock achievements-sync relay-pair relay relay-install relay-uninstall relay-status
 
 help:           ## 列出全部目标 | List every target
-	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/:.*## /\t/' | expand -t 16
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/:.*## /\t/' | expand -t 22
 
 check:          ## 体检：逐项报告缺什么、下一步命令，不改任何东西 | Health check: report what is missing and the next command; changes nothing
 	@./setup.sh check
@@ -51,6 +52,30 @@ logs:           ## 取回 iPad 上的 Player.log 与截图 | Fetch Player.log an
 
 smoke:          ## 设备冒烟测试：启动、收集日志与截图、逐项检查 | On-device smoke test: launch, collect log and snapshots, check each item
 	@$(S)/smoke_test.sh
+
+achievements:   ## 列出 Steam 成就和解锁状态（Steam 要已登录） | List the Steam achievements and whether they are unlocked (Steam must be logged in)
+	@$(S)/achievements.sh list
+
+achievements-unlock: ## 手动解锁：make achievements-unlock NAMES="ACH_KIM ACH_CUNO" | Unlock by hand: make achievements-unlock NAMES="ACH_KIM ACH_CUNO"
+	@$(S)/achievements.sh unlock $(NAMES)
+
+achievements-sync: ## 经 USB 同步 iPad 记下的成就到 Steam，再写回最新状态 | Sync the achievements recorded on the iPad to Steam over USB, then write the state back
+	@$(S)/achievements.sh sync
+
+relay-pair:     ## 生成 iPad 与 Mac 共用的配对密钥（写进 config.env） | Generate the pairing secret shared by the iPad and the Mac (written to config.env)
+	@$(S)/achievements.sh pair
+
+relay:          ## 在前台运行成就实时转发服务（DRY_RUN=1 只记日志） | Run the live achievement relay in the foreground (DRY_RUN=1 only logs)
+	@$(S)/achievements.sh serve $(if $(DRY_RUN),--dry-run)
+
+relay-install:  ## 把实时转发装成登录后自动运行的后台服务 | Install the live relay as a background service that starts at login
+	@$(S)/achievements.sh install
+
+relay-uninstall: ## 卸载后台转发服务 | Remove the background relay service
+	@$(S)/achievements.sh uninstall
+
+relay-status:   ## 后台转发服务的状态和最近日志 | Status and recent log of the background relay service
+	@$(S)/achievements.sh status
 
 clean:          ## 删除构建产物（保留下载的 Unity 包与转换好的数据） | Delete build output (keeps the downloaded Unity package and the converted data)
 	rm -rf build/xcode build/DerivedData build/Frameworks build/tmp build/*.log

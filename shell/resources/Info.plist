@@ -59,6 +59,8 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Sends your Steam achievements to the Steam client on your Mac (only when achievement sync is turned on). 把 Steam 成就发给你 Mac 上的 Steam（只在开启成就同步时使用）。</string>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

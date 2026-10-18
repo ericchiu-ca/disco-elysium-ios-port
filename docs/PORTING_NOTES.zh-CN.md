@@ -178,3 +178,58 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
 | 游戏构建（Unity 版本不变） | `DEAspect.mm` 里的类名和成员名（`AspectUtility`、`AspectRatioFitterUtility`、`GlobalUIFitter`）；`DEBootstrap.mm` 里的插件名；关于 `Application.platform` / `dataPath` 的假设。用 `DE_UI_DIAG` 和反汇编重新推导 |
 | 另一个有 Mac arm64 构建的 Unity IL2CPP 游戏 | 引擎这一侧（第二到第四节）是通用的；第五、六节是针对这个游戏的输入和布局代码的 |
 | Xcode / iOS SDK | 新的 UIKit 要求（就像 UIScene 这次）；`tools/patch_player_lib.py` 需要仍能读取 `TextureFormatMetal.o` 里 2021 年嵌入的 bitcode 的 clang（链接本身用的是每个对象文件的原生代码，没有 LTO） |
+
+## 十、Steam 成就转发（`shell/stubs/steam_relay.c`、`tools/steam_relay.py`）
+
+可选，默认关闭（在 `config.env` 里设置 `ACH_RELAY=1`）。面向用户的说明见 [ACHIEVEMENTS.zh-CN.md](ACHIEVEMENTS.zh-CN.md)。
+
+### 10.1 游戏怎么使用 Steam
+
+- **选后端：**游戏启动时选一个成就后端（Steam、GOG 或者都不用），并输出 `INITIALIZE ACHIEVEMENTS: <后端>`。用普通桩库时输出 `NONE`，成就全部丢掉。
+- **Steam 后端：**用的是 Steamworks.NET，回调手动分发。除了生命周期函数（`SteamAPI_Init`、`SteamAPI_RestartAppIfNecessary`、`SteamAPI_Shutdown`、`SteamAPI_GetHSteamUser` / `GetHSteamPipe`、`SteamInternal_CreateInterface`、`SteamInternal_FindOrCreateUserInterface`），它绑定的原生函数有：
+  - `ISteamUserStats`：`RequestCurrentStats`、`GetAchievement`、`SetAchievement`、`ClearAchievement`、`GetStatInt32` / `GetStatFloat`、`SetStatInt32` / `SetStatFloat`、`StoreStats`、`ResetAllStats`
+  - `SteamAPI_ManualDispatch_*`：`Init`、`RunFrame`、`GetNextCallback`、`FreeLastCallback`、`GetAPICallResult`
+  - `ISteamUser`（`GetSteamID`）、`ISteamFriends`（`GetPersonaName`）、`ISteamApps`（`GetCurrentGameLanguage`、`GetAvailableGameLanguages`）、`ISteamUtils`（`IsSteamRunningOnSteamDeck`）、`ISteamInput` 各一两个函数
+  - 23 个 `ISteamClient_GetISteam*` 取接口函数
+
+  没有 `BIsSubscribedApp` 这类所有权检查。
+- **Steam 上的定义：**45 个成就（`ACH_*`），没有按进度解锁的成就。三个统计值（`stat_int`、`stat_float_aggregated`、`stat_int_incr`）看起来是 Steamworks 示例里的占位项。
+
+### 10.2 让游戏相信 Steam 在线
+
+- **接口指针：**`SteamInternal_CreateInterface` 和每个 `ISteamClient_GetISteam*` 都返回非空指针，Steamworks.NET 的 `CSteamAPIContext.Init` 才会成功。桩库统一返回同一个占位对象，所有方法都忽略 `self`。
+- **回调：**`RequestCurrentStats` 立即用本地记录排入 `UserStatsReceived_t`（1101）。`StoreStats` 排入 `UserStatsStored_t`（1102），并为每个新设置的成就排入一个 `UserAchievementStored_t`（1103）。`ManualDispatch_GetNextCallback` 把它们逐个交出去。
+- **结构布局：**macOS 版 SDK 的回调结构按 4 字节对齐，为 StandaloneOSX 编译的 Steamworks.NET 也按这个布局读取：`CallbackMsg_t` 20 字节，1101 为 20，1102 为 12，1103 为 148。代码里用 `_Static_assert` 固定这些大小。
+- **字符串：**昵称、Steam ID 和语言来自 Mac 上次发来的状态。第一次连上之前，语言根据 iPad 的首选语言换算（`zh-Hans` → `schinese`……）。
+- **成就状态：**每个成就有两个标记：`steam`（Steam 已确认）和 `local`（在这台 iPad 上设置、还没确认）。`GetAchievement` 只要有一个为真就报告已解锁。Steam 确认后，排队的记录随即删除，所以同一条记录不会发两次。
+
+### 10.3 送达
+
+- **队列文件：**`Documents/Achievements/pending.txt`，每行一条 `<编号> <A|I|F> <名称> <值>`。每次 `Set…` 都会写入，App 被强行结束也不会丢。
+- **转发线程：**后台线程连接编译进来的 `ACH_RELAY_HOST:ACH_RELAY_PORT`。失败后从 5 秒起逐步退避，最长 60 秒；`StoreStats` 会立即唤醒它。
+- **协议：**文本行，完整说明在 `tools/steam_relay.py` 的 serve / worker 部分开头。
+  - Mac 发 `HELLO` 和随机数；iPad 用配对密钥算 HMAC-SHA256，回 `AUTH`。
+  - Mac 回 `OK`，接着发 `STATE BEGIN … STATE END`，格式与 `state.txt` 相同。
+  - 每条队列记录以 `SET <编号> …` 发出。Mac 在 `StoreStats` 和 `UserStatsStored_t` 都成功后回 `ACK <编号>`；或者回 `NAK <编号> unknown`，iPad 随即丢弃这条记录。
+  - 每 20 秒一次 `PING`，让会话保持连接，Steam 上的"正在玩"状态也随之保持。
+- **每个连接一个 Steam 会话：**`serve` 完成认证后，把连接交给一个 `worker` 进程。worker 调用 `SteamAPI_Init`，读出全部成就（以及 Steam 缓存的 `UserGameStatsSchema_<appid>.bin` 里列出的统计值）。iPad 断开、或 90 秒没有消息时，它调用 `SteamAPI_Shutdown`。新的已认证连接会替换旧的 worker。
+- **USB 方式：**`make achievements-sync` 用 `devicectl` 取回 iPad 上的 `pending.txt`，提交到 Steam，再把新的 `state.txt` 拷回 iPad。App 发现 `state.txt` 的修改时间变了就重新读取，并删掉 Steam 上已经有的记录。
+
+### 10.4 Mac 端的取舍
+
+- **Python：**用 `/usr/bin/python3`（Apple 自带的 Python 3.9），通过 `ctypes` 加载 Valve 的 `libsteam_api.dylib`。它是 Apple 签名的系统软件，监听端口受 macOS 防火墙默认的"自动允许内建软件"覆盖；换成 Homebrew 的 Python，就会弹出"是否接受传入连接"。所以 `tools/steam_relay.py` 保持兼容 Python 3.9。
+- **App ID：**`SteamAPI_Init` 从环境变量 `SteamAppId` / `SteamGameId`，以及临时工作目录里的 `steam_appid.txt` 得知 App ID。
+- **取接口函数：**参考环境那份 libsteam_api 导出的是 `SteamAPI_SteamUserStats_v012`、`SteamAPI_SteamUser_v021`、`SteamAPI_SteamFriends_v017`、`SteamAPI_SteamApps_v008`。其他构建如果用了更新的 SDK，名字可能不同。
+- **后台服务的位置：**launchd 启动的任务没有隐私授权就读不了 `~/Documents`。所以 `make relay-install` 把脚本复制到 `~/Library/Application Support/DEPortSteamRelay/`，配置放进任务的环境变量（plist 权限 0600）。
+
+### 10.5 目前验证过的
+
+- **Mac，只读：**`make achievements` 读取真实账号（45 个成就）。
+- **Mac，本机回环：**把桩库编译成 macOS 版，配一个小测试程序，连接 `make relay DRY_RUN=1`。
+  - 错误的密钥被拒绝，正确的被接受。
+  - 收到了账号上真实的解锁状态；对一个已解锁的成就，`GetAchievement` 报告已解锁。
+  - 一条已在 Steam 上解锁的排队记录，在发送前就被删掉了。
+  - 未知的名字收到 `NAK … unknown`，被丢弃。
+  - 真实的名字被转发；演练模式不回 `ACK`，所以它留在了队列里。
+  - 1101、1102、1103 三个回调送达，大小分别是 20、12、148。
+- **尚未验证：**iPad 上的游戏选用 Steam 后端，以及成就真正到达 Steam。

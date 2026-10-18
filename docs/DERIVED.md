@@ -7,6 +7,7 @@
 - **No game content**: no game program, scripts, data, art, text, audio, shaders, saves or screenshots. Everything under `build/` (retagged binaries, converted data, generated project, device logs and snapshots) is produced on your machine from your copy and is ignored by git.
 - **No Unity binaries or Unity source files**: the iOS player library, `baselib.a`, the Trampoline and the built-in resources are downloaded by each user from Unity's CDN into `vendor/`, which is ignored by git.
 - **No copied code from the game's native plugins**: the stub libraries are generated at build time from the *export names* of your own copy.
+- **No Steam binaries**: the optional achievement relay loads the `libsteam_api.dylib` inside your own copy of the game.
 
 ## In the repository
 
@@ -23,6 +24,8 @@ Only names, numbers and short anchors needed to interoperate with your own copy 
 | `shell/src/DEVirtualInput.h` | A few `UnityEngine.KeyCode` values (Tab, Escape, I, J, C, T, M) | The on-screen highlight button and the automation hooks send these keys |
 | `shell/src/DEBootstrap.mm` | The names of the game's native plugins (`steam_api`, `GalaxyCSharpGlue`, `InControlNative`, `AmplifyTextureNative`) and the Mac path of CFNetwork used by Mono | Native library lookups from the game are redirected to the frameworks inside the app |
 | `shell/stubs/steam_api_overrides.c` | Four public Steamworks function names with their signatures | They must report "Steam is not available" explicitly (one of them returns 0 for success, so the generic "return 0" stub would be wrong) |
-| `config.example.env`, `setup.sh`, `docs/` | The Unity version, changeset and the SHA-256 of Unity's official package; the game's build string | To download and verify the right runtime, and to tell users which copy of the game is supported |
+| `shell/stubs/steam_relay.c` (optional achievement mode) | The names and signatures of the Steamworks functions the game binds, the IDs of three callbacks (1101–1103) and their 4-byte-packed layouts, the Steam names of a few languages | The stub has to answer exactly the calls the game makes, in the layout its Steamworks.NET reads |
+| `tools/steam_relay.py` | Steamworks flat-API function names, including the versioned accessors (`SteamAPI_SteamUserStats_v012`, `SteamAPI_SteamUser_v021`, `SteamAPI_SteamFriends_v017`, `SteamAPI_SteamApps_v008`), and the layout of Valve's binary KeyValues used for Steam's cached stats schema | To drive the Steam client on your Mac through the official interface and find the game's stat names |
+| `config.example.env`, `setup.sh`, `docs/` | The Unity version, changeset and the SHA-256 of Unity's official package; the game's build string; the game's public Steam app ID (632470) and the achievement IDs mentioned in examples | To download and verify the right runtime, and to tell users which copy of the game is supported |
 
 If you add anything of this kind, list it here (in both languages) in the same change.

@@ -103,6 +103,19 @@ DEV=$(resolve_device 2> /dev/null)
 if [[ -n "$DEV" ]]; then ok "$(m "已配对的 iPad：" "Paired iPad: ")$DEV"
 else note "$(m "没有找到已配对的实体 iPad；安装前用线连接并在 Xcode 的设备窗口里配对" "No paired physical iPad found; before installing, connect it by cable and pair it in Xcode's Devices window")"; fi
 
+if [[ "$ACH_RELAY" == 1 ]]; then
+  log "$(m "七、Steam 成就同步（ACH_RELAY=1，见 docs/ACHIEVEMENTS.zh-CN.md）" "7. Steam achievement sync (ACH_RELAY=1, see docs/ACHIEVEMENTS.md)")"
+  if [[ "$ACH_RELAY_SECRET" =~ ^[0-9a-f]{32,64}$ ]]; then ok "$(m "配对密钥已生成" "Pairing secret generated")"
+  else bad "$(m "还没有配对密钥" "No pairing secret yet")" "make relay-pair"; fi
+  note "$(m "iPad 将连接 " "The iPad will connect to ")$(relay_host):$ACH_RELAY_PORT"
+  if [[ -f "$GAME_CONTENTS/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib" ]]; then ok "$(m "游戏自带的 libsteam_api.dylib" "The game's own libsteam_api.dylib")"
+  else bad "$(m "游戏目录里没有 libsteam_api.dylib" "No libsteam_api.dylib in the game folder")" "$(m "确认 GAME_APP 指向 Steam 版" "Make sure GAME_APP points to the Steam version")"; fi
+  if [[ -d /Applications/Steam.app || -d "$HOME/Applications/Steam.app" ]]; then ok "Steam.app"
+  else bad "$(m "没有安装 Steam" "Steam is not installed")" "$(m "从 store.steampowered.com 安装 Steam 并登录" "Install Steam from store.steampowered.com and log in")"; fi
+  if launchctl print "gui/$(id -u)/${BUNDLE_ID:-de-port}.steam-relay" > /dev/null 2>&1; then ok "$(m "实时转发后台服务已安装" "Live relay background service installed")"
+  else note "$(m "实时转发后台服务没有安装：make relay-install（或临时在前台运行 make relay）" "The live relay background service is not installed: make relay-install (or run make relay in the foreground for now)")"; fi
+fi
+
 echo
 if [[ $missing -gt 0 ]]; then
   echo "$(m "还缺 $missing 项。下一步：" "$missing item(s) missing. Next step:") $NEXT"

@@ -178,3 +178,58 @@ Crash reports: `xcrun devicectl device info files --device <id> --domain-type sy
 | Game build, same Unity | Class and member names in `DEAspect.mm` (`AspectUtility`, `AspectRatioFitterUtility`, `GlobalUIFitter`); the plugin names in `DEBootstrap.mm`; the assumptions about `Application.platform` / `dataPath`. Use `DE_UI_DIAG` and disassembly to re-derive them |
 | Another Unity IL2CPP game with a Mac arm64 build | The engine side (sections 2–4) is generic; sections 5–6 are specific to this game's input and layout code |
 | Xcode / iOS SDK | New UIKit requirements (as with UIScene); `tools/patch_player_lib.py` needs a clang that can still read the 2021 bitcode embedded in `TextureFormatMetal.o` (linking itself uses the native code of every object, there is no LTO) |
+
+## 10. Steam achievement relay (`shell/stubs/steam_relay.c`, `tools/steam_relay.py`)
+
+Optional, off by default (`ACH_RELAY=1` in `config.env`). User-facing guide: [ACHIEVEMENTS.md](ACHIEVEMENTS.md).
+
+### 10.1 What the game does with Steam
+
+- **Backend choice:** at start-up the game picks an achievement backend (Steam, GOG or none) and logs `INITIALIZE ACHIEVEMENTS: <backend>`. With the plain stub it logs `NONE` and drops every achievement.
+- **The Steam backend:** it uses Steamworks.NET with manual callback dispatch. Besides the lifecycle calls (`SteamAPI_Init`, `SteamAPI_RestartAppIfNecessary`, `SteamAPI_Shutdown`, `SteamAPI_GetHSteamUser` / `GetHSteamPipe`, `SteamInternal_CreateInterface`, `SteamInternal_FindOrCreateUserInterface`), the native functions it binds are:
+  - `ISteamUserStats`: `RequestCurrentStats`, `GetAchievement`, `SetAchievement`, `ClearAchievement`, `GetStatInt32` / `GetStatFloat`, `SetStatInt32` / `SetStatFloat`, `StoreStats`, `ResetAllStats`
+  - `SteamAPI_ManualDispatch_*`: `Init`, `RunFrame`, `GetNextCallback`, `FreeLastCallback`, `GetAPICallResult`
+  - one or two functions each from `ISteamUser` (`GetSteamID`), `ISteamFriends` (`GetPersonaName`), `ISteamApps` (`GetCurrentGameLanguage`, `GetAvailableGameLanguages`), `ISteamUtils` (`IsSteamRunningOnSteamDeck`) and `ISteamInput`
+  - 23 `ISteamClient_GetISteam*` getters
+
+  There is no ownership call such as `BIsSubscribedApp`.
+- **Steam's schema:** 45 achievements (`ACH_*`), no progress-based achievements. The three stats (`stat_int`, `stat_float_aggregated`, `stat_int_incr`) look like Steamworks sample placeholders.
+
+### 10.2 Making the game believe Steam is there
+
+- **Interfaces:** Steamworks.NET's `CSteamAPIContext.Init` fails unless `SteamInternal_CreateInterface` and every `ISteamClient_GetISteam*` getter return non-NULL pointers. The stub returns one shared dummy object; every method ignores `self`.
+- **Callbacks:** `RequestCurrentStats` queues `UserStatsReceived_t` (1101) at once, answering from the local records. `StoreStats` queues `UserStatsStored_t` (1102), plus one `UserAchievementStored_t` (1103) for each achievement newly set. `ManualDispatch_GetNextCallback` hands them out.
+- **Layouts:** the macOS SDK packs callback structures to 4 bytes, and Steamworks.NET compiled for StandaloneOSX reads them that way: `CallbackMsg_t` 20 bytes, 1101 = 20, 1102 = 12, 1103 = 148. `_Static_assert`s pin these sizes.
+- **Strings:** the persona name, Steam ID and languages come from the last state the Mac sent. Before the first connection, the language is derived from the iPad's preferred language (`zh-Hans` → `schinese`, …).
+- **Achievement state:** each achievement keeps two flags, `steam` (confirmed by Steam) and `local` (set on this iPad, not confirmed yet). `GetAchievement` reports either one. A queued entry is dropped once Steam confirms it, so an entry is never sent twice.
+
+### 10.3 Delivery
+
+- **Queue file:** `Documents/Achievements/pending.txt` holds one `<id> <A|I|F> <name> <value>` per line. It is written on every `Set…`, so nothing is lost if the app is killed.
+- **Relay thread:** a background thread connects to `ACH_RELAY_HOST:ACH_RELAY_PORT` (compiled in). It retries with backoff from 5 s up to 60 s, and `StoreStats` wakes it.
+- **Protocol:** text lines; the full description is at the top of the serve/worker part of `tools/steam_relay.py`.
+  - The Mac sends `HELLO` with a nonce; the iPad answers `AUTH` with HMAC-SHA256 under the pairing secret.
+  - The Mac replies `OK`, followed by `STATE BEGIN … STATE END`, the same format as `state.txt`.
+  - Each queue entry goes out as `SET <id> …`. The Mac answers `ACK <id>` after `StoreStats` and `UserStatsStored_t` succeed, or `NAK <id> unknown`, after which the iPad drops the entry.
+  - `PING` every 20 s keeps the session, and with it Steam's "playing" status, alive.
+- **One Steam session per connection:** `serve` authenticates, then hands the socket to a `worker` process. The worker calls `SteamAPI_Init`, reads every achievement (and the stats named in Steam's cached `UserGameStatsSchema_<appid>.bin`), and calls `SteamAPI_Shutdown` when the iPad disconnects or has been silent for 90 s. A new authenticated connection replaces the old worker.
+- **USB fallback:** `make achievements-sync` copies `pending.txt` from the iPad with `devicectl`, commits it, and copies a fresh `state.txt` back. The app reloads `state.txt` when its mtime changes, then drops the entries Steam already has.
+
+### 10.4 Mac-side choices
+
+- **Python:** `/usr/bin/python3` (Apple's Python 3.9) loads Valve's `libsteam_api.dylib` through `ctypes`. Because it is Apple-signed system software, the macOS firewall's default "allow built-in software" covers the listening socket. Homebrew's Python would trigger an "accept incoming connections?" prompt. `tools/steam_relay.py` therefore stays compatible with Python 3.9.
+- **App ID:** `SteamAPI_Init` learns the app ID from `SteamAppId` / `SteamGameId` and from a `steam_appid.txt` in a temporary working directory.
+- **Accessors:** the libsteam_api in the reference copy exports `SteamAPI_SteamUserStats_v012`, `SteamAPI_SteamUser_v021`, `SteamAPI_SteamFriends_v017` and `SteamAPI_SteamApps_v008`. A newer SDK in another build may rename them.
+- **Service location:** launchd jobs cannot read `~/Documents` without a privacy grant. `make relay-install` therefore copies the script to `~/Library/Application Support/DEPortSteamRelay/`, and puts the configuration in the job's environment (plist mode 0600).
+
+### 10.5 Verified so far
+
+- **Mac, read-only:** `make achievements` against a real account (45 achievements).
+- **Mac, loopback:** the stub compiled for macOS with a small harness against `make relay DRY_RUN=1`.
+  - A wrong secret was rejected and the right one accepted.
+  - State arrived with the account's real unlock states, and `GetAchievement` reported an unlocked one as achieved.
+  - A queued achievement that was already unlocked on Steam was pruned before sending.
+  - An unknown name was answered with `NAK … unknown` and dropped.
+  - A real name was forwarded and stayed queued, because a dry run sends no `ACK`.
+  - Callbacks 1101, 1102 and 1103 arrived with sizes 20, 12 and 148.
+- **Not verified yet:** the game on the iPad selecting its Steam backend and an achievement reaching Steam.

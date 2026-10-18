@@ -10,6 +10,8 @@ English: [README.md](README.md)
 >
 > 本项目只提供工具和一个不含任何游戏内容的安装外壳。我们不分发、不认可、也不对任何第三方分发游戏资源、游戏可执行文件或含游戏内容的安装包负责。请只使用你合法拥有的游戏文件。
 
+**这个仓库是移植版加上可选的 Steam 成就同步：**你在 iPad 上玩，由你 Mac 上的 Steam 客户端提交成就（[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)）。不含这个功能的基础移植版是 [disco-elysium-ios-port](https://github.com/ericchiu-ca/disco-elysium-ios-port)。
+
 ## 它是什么，不是什么
 
 **它是：**
@@ -37,6 +39,7 @@ English: [README.md](README.md)
 | 输入 | 轻点、悬停、拖动、双击跑步、右键、滚轮；一个用于高亮可交互物的按钮 |
 | 游戏 | 新游戏、开场对话、读取存档、在第一个区域里游玩，都已在设备上测试 |
 | 内存 | 游戏中约 5.8 GB，距系统强制结束还有约 6.5 GB 余量 |
+| Steam 成就 | 可选：在 iPad 上记录，通过你 Mac 上的 Steam 客户端提交（[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)）。Mac 端已测试；iPad 上的完整流程尚未验证 |
 
 ## 原理
 
@@ -60,6 +63,7 @@ flowchart LR
 | 数据转换 | `tools/convert_data.py`、`tools/unity_formats.py` | 修改每个序列化文件和 AssetBundle 的目标平台，按 iOS 播放器的要求排布数据 |
 | iOS 外壳 | `shell/src` | UIScene 生命周期、插件重定向、Mac 式的 `platform` / `dataPath`、横屏、铺满屏幕、虚拟鼠标和按键、高亮按钮、诊断工具 |
 | 设备工具 | `scripts/device.sh`、`scripts/smoke_test.sh` | 安装、推送数据、实时日志、取回日志和截图、自动冒烟测试 |
+| Steam 成就（可选） | `shell/stubs/steam_relay.c`、`tools/steam_relay.py`、`scripts/achievements.sh` | Steam 桩库的成就模式、Mac 上的转发服务、手动解锁与 USB 同步 |
 
 完整的工程记录——在设备上遇到的每个问题、它的原因和修法——见 [docs/PORTING_NOTES.zh-CN.md](docs/PORTING_NOTES.zh-CN.md)。
 
@@ -102,6 +106,8 @@ flowchart LR
    make smoke
    ```
 
+可选：想在 iPad 上玩的同时拿到 Steam 成就，按 [docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md) 设置。
+
 `make help` 列出全部目标。重装或重新签名 App 不会丢失 iPad 上的数据；只有数据变化后才需要再跑 `make push-data`。`make logs` 从 iPad 取回 `Player.log`。
 
 ## 操作
@@ -125,7 +131,8 @@ flowchart LR
 
 | 项目 | 状态 |
 |---|---|
-| Steam 成就、云存档 | 没有；Steam 是桩库。存档只保存在 iPad 上 |
+| Steam 云存档 | 没有；存档只保存在 iPad 上 |
+| Steam 成就 | 默认关闭；可以通过你 Mac 上的 Steam 客户端同步，见 [docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md) |
 | 游戏手柄 | 暂不支持（InControl 的原生层是桩库） |
 | 游戏的其他构建、其他 Unity 版本 | 未验证；有几个步骤绑定了确切的 Unity 版本和游戏类，见 [docs/PORTING_NOTES.zh-CN.md](docs/PORTING_NOTES.zh-CN.md) 第九节 |
 | GOG 的 Mac 版 | 未验证（可能是同一个构建） |
@@ -142,13 +149,14 @@ flowchart LR
 | [docs/GAME_FILES.zh-CN.md](docs/GAME_FILES.zh-CN.md) | 需要哪一份游戏、用到了哪些部分、数据放在 iPad 的哪里 |
 | [docs/DEPENDENCIES.zh-CN.md](docs/DEPENDENCIES.zh-CN.md) | 工具、版本、Unity 包及其校验值 |
 | [docs/DERIVED.zh-CN.md](docs/DERIVED.zh-CN.md) | 仓库里与游戏、Unity 相关的内容：有什么、没有什么、为什么 |
+| [docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md) | 可选的 Steam 成就同步（经你的 Mac）：设置、命令、安全、限制 |
 | [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md) | 改动前的检查、三条规矩、提交与反馈 |
 
 ## 法律声明
 
 **你必须拥有这款游戏。**这是一个独立的、非商业的个人使用项目，与 ZA/UM、Unity Technologies、Valve 或 Apple 没有任何关联，也未获得它们的认可或赞助。Disco Elysium 是其所有者的商标；Unity 是 Unity Technologies 的商标；Steam 是 Valve Corporation 的商标。Unity iOS 播放器由每个用户自己从 Unity 下载，并按 Unity 的条款使用，它不属于本仓库。
 
-- **不移除任何所有权校验。**Steam 桩库只报告"Steam 不可用"，游戏自己的代码本来就能处理这种情况：同一份代码也支持 GOG Galaxy，而游戏的 GOG 版本身没有 DRM。本项目不解密游戏，也不绕过任何授权校验。
+- **不移除任何所有权校验。**Steam 桩库只报告"Steam 不可用"，游戏自己的代码本来就能处理这种情况：同一份代码也支持 GOG Galaxy，而游戏的 GOG 版本身没有 DRM。本项目不解密游戏，也不绕过任何授权校验。在可选的成就模式下，桩库会告诉游戏 Steam 在线，但它自己不解锁任何成就：解锁的是你 Mac 上的官方 Steam 客户端，由它校验你是否拥有这款游戏。
 - **Unity 的条款由你自己遵守。**`make fetch` 把 Unity 的 iOS 播放器下载到你自己的 Mac 上。使用它受 Unity 条款的约束，遵守这些条款是你自己的责任。
 - **版权方：**如果你对本仓库有任何疑虑，请开一个 Issue。仓库所有者会回复，必要时修改或移除相关内容。
 

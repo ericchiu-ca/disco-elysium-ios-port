@@ -62,6 +62,18 @@ Then look at the snapshots (by eye, or with an image-capable model). `build/smok
 
 Reference values: memory footprint about 4.9 GB at the main menu and about 5.8 GB in game, with about 6.5 GB of headroom before the system would end the app (iPad Pro 11-inch M5).
 
+## Achievement mode (optional)
+
+Only with `ACH_RELAY=1`; see [ACHIEVEMENTS.md](ACHIEVEMENTS.md).
+
+| Step | Expected |
+|---|---|
+| `./setup.sh check` | Section 7 has no `✗` |
+| `make achievements` (Steam open and logged in; read-only) | One line per achievement (`✓` or `·`), ending with "Unlocked N of 45" |
+| `make relay DRY_RUN=1` in one terminal, then start the game on the iPad | The relay prints `iPad connected` and `Steam session started`; `Player.log` has `[DEPort] steam relay: connected to the Mac: …` |
+| `make smoke` | Three more checks: "Steam achievement mode on", "The game initialized an achievement backend", and no `INITIALIZE ACHIEVEMENTS: NONE` |
+| Unlock an achievement in the game (with `make relay` running without `DRY_RUN`) | `Player.log`: `achievement … recorded`, then `… committed to Steam`; it shows on your Steam profile |
+
 ## Manual checklist
 
 | Action | Expected |

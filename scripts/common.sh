@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # 先记下调用者显式传入的环境变量，配置文件不能覆盖它们（兼容 macOS 自带的 bash 3.2）
 # Remember the environment variables the caller passed explicitly, so the config files cannot override them (compatible with the bash 3.2 that ships with macOS)
-_DE_VARS="GAME_APP TEAM_ID BUNDLE_ID DEVICE UNITY_VERSION UNITY_CHANGESET UNITY_IOS_PKG_SHA256 IOS_DEPLOYMENT_TARGET"
+_DE_VARS="GAME_APP TEAM_ID BUNDLE_ID DEVICE UNITY_VERSION UNITY_CHANGESET UNITY_IOS_PKG_SHA256 IOS_DEPLOYMENT_TARGET ACH_RELAY ACH_RELAY_HOST ACH_RELAY_PORT ACH_RELAY_SECRET STEAM_APP_ID"
 for _v in $_DE_VARS; do
   if [[ -n "${!_v+x}" ]]; then printf -v "_DE_SAVED_$_v" '%s' "${!_v}"; fi
 done
@@ -82,6 +82,19 @@ EOF
 require_signing_config() {
   [[ -n "$TEAM_ID" ]] || die "$(m "config.env 里没有设置 TEAM_ID（见 config.example.env）" "TEAM_ID is not set in config.env (see config.example.env)")"
   [[ -n "$BUNDLE_ID" ]] || die "$(m "config.env 里没有设置 BUNDLE_ID（见 config.example.env）" "BUNDLE_ID is not set in config.env (see config.example.env)")"
+}
+
+# 成就模式的配置：密钥、端口和主机名都要能安全地写进 C 字符串
+# Achievement-mode settings: the secret, port and host name must all be safe to put into a C string
+relay_host() {
+  if [[ -n "$ACH_RELAY_HOST" ]]; then echo "$ACH_RELAY_HOST"; else echo "$(scutil --get LocalHostName).local"; fi
+}
+
+require_relay_config() {
+  [[ "$ACH_RELAY_SECRET" =~ ^[0-9a-f]{32,64}$ ]] || die "$(m "成就模式需要配对密钥：先运行 make relay-pair" "Achievement mode needs a pairing secret: run make relay-pair first")"
+  [[ "$ACH_RELAY_PORT" =~ ^[0-9]{2,5}$ ]] || die "$(m "ACH_RELAY_PORT 不是有效端口：$ACH_RELAY_PORT" "ACH_RELAY_PORT is not a valid port: $ACH_RELAY_PORT")"
+  [[ "$(relay_host)" =~ ^[A-Za-z0-9.-]+$ ]] || die "$(m "ACH_RELAY_HOST 只能包含字母、数字、点和减号：$(relay_host)" "ACH_RELAY_HOST may contain only letters, digits, dots and hyphens: $(relay_host)")"
+  [[ "$STEAM_APP_ID" =~ ^[0-9]+$ ]] || die "$(m "STEAM_APP_ID 不是数字：$STEAM_APP_ID" "STEAM_APP_ID is not a number: $STEAM_APP_ID")"
 }
 
 require_ios_support() {

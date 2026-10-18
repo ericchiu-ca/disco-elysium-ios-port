@@ -8,6 +8,8 @@ Platform: iPad with an M-series chip, iPadOS 27 (verified on iPad Pro 11-inch M5
 
 > This project provides only tools and an install shell that contains no game content. We do not distribute or endorse, and are not responsible for, any third party distributing game assets, game executables or install packages that contain game content. Please use only game files you legally own.
 
+**This repository is the port plus optional Steam achievement sync:** you play on the iPad, and the Steam client on your Mac commits your achievements ([docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md)). The base port without it is [disco-elysium-ios-port](https://github.com/ericchiu-ca/disco-elysium-ios-port).
+
 ## What it is, and what it is not
 
 **It is:**
@@ -35,6 +37,7 @@ Verified on an iPad Pro 11-inch (M5), iPadOS 27.2:
 | Input | Tap, hover, drag, double-tap to run, right click, scroll; a highlight button for interactables |
 | Game | New game, the opening dialogue, loading a save, and play in the first area were tested on the device |
 | Memory | About 5.8 GB in game, with about 6.5 GB of headroom before the system would end the app |
+| Steam achievements | Optional: recorded on the iPad and committed through the Steam client on your Mac ([docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md)). Mac side tested; end to end on the iPad not verified yet |
 
 ## How it works
 
@@ -58,6 +61,7 @@ flowchart LR
 | Data conversion | `tools/convert_data.py`, `tools/unity_formats.py` | Changes the target platform in every serialized file and AssetBundle, lays the data out for the iOS player |
 | iOS shell | `shell/src` | UIScene lifecycle, plugin redirection, Mac-shaped `platform` / `dataPath`, landscape, full-screen layout, virtual mouse and keys, highlight button, diagnostics |
 | Device tools | `scripts/device.sh`, `scripts/smoke_test.sh` | Install, push data, stream logs, fetch logs and snapshots, automated smoke test |
+| Steam achievements (optional) | `shell/stubs/steam_relay.c`, `tools/steam_relay.py`, `scripts/achievements.sh` | Achievement mode of the Steam stub, the relay on the Mac, manual unlock and USB sync |
 
 The full engineering record — every problem met on the device, its cause and its fix — is in [docs/PORTING_NOTES.md](docs/PORTING_NOTES.md).
 
@@ -100,6 +104,8 @@ You need: an Apple silicon Mac with Xcode and XcodeGen, the Mac version of the g
    make smoke
    ```
 
+Optional: to get your Steam achievements while playing on the iPad, follow [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md).
+
 `make help` lists every target. Reinstalling or re-signing the app keeps the data on the iPad; run `make push-data` again only after the data changes. `make logs` fetches `Player.log` from the iPad.
 
 ## Controls
@@ -123,7 +129,8 @@ The repository is written so that an agent can reproduce the port on another per
 
 | Item | Status |
 |---|---|
-| Steam achievements, cloud saves | Not available; Steam is stubbed. Saves stay on the iPad |
+| Steam cloud saves | Not available; saves stay on the iPad |
+| Steam achievements | Off by default; optional sync through the Steam client on your Mac, see [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md) |
 | Game controllers | Not supported yet (InControl's native layer is stubbed) |
 | Other builds of the game, other Unity versions | Not verified; several steps are tied to the exact Unity version and game classes, see [docs/PORTING_NOTES.md](docs/PORTING_NOTES.md) section 9 |
 | GOG Mac release | Not verified (it may be the same build) |
@@ -140,13 +147,14 @@ The repository is written so that an agent can reproduce the port on another per
 | [docs/GAME_FILES.md](docs/GAME_FILES.md) | Which copy of the game, what is used, where the data goes on the iPad |
 | [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) | Tools, versions, the Unity package and its checksum |
 | [docs/DERIVED.md](docs/DERIVED.md) | Game- and Unity-related material in the repository: what is here, what is not, and why |
+| [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md) | Optional Steam achievement sync through your Mac: setup, commands, security, limits |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Checks before a change, the three rules, submitting and reporting |
 
 ## Legal
 
 **You must own the game.** This is an independent, non-commercial project for personal use. It is not affiliated with, endorsed by, or sponsored by ZA/UM, Unity Technologies, Valve or Apple. Disco Elysium is a trademark of its respective owner; Unity is a trademark of Unity Technologies; Steam is a trademark of Valve Corporation. The Unity iOS player is downloaded by each user from Unity and used under Unity's terms; it is not part of this repository.
 
-- **No ownership check is removed.** The Steam stub only reports that Steam is not available, a case the game's own code already handles: the same code also supports GOG Galaxy, and the GOG release of the game has no DRM. Nothing in this project decrypts the game or works around a licence check.
+- **No ownership check is removed.** The Steam stub only reports that Steam is not available, a case the game's own code already handles: the same code also supports GOG Galaxy, and the GOG release of the game has no DRM. Nothing in this project decrypts the game or works around a licence check. In the optional achievement mode the stub tells the game that Steam is present, but it unlocks nothing itself: the official Steam client on your Mac does, and that client checks that you own the game.
 - **Unity's terms are yours to follow.** `make fetch` downloads Unity's iOS player onto your own Mac. Using it is subject to Unity's terms, and you are responsible for complying with them.
 - **Rights holders:** if you have a concern about this repository, please open an issue. The owner will respond and, where needed, change or remove the material in question.
 
