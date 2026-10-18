@@ -146,6 +146,10 @@ The repository is written so that an agent can reproduce the port on another per
 
 **You must own the game.** This is an independent, non-commercial project for personal use. It is not affiliated with, endorsed by, or sponsored by ZA/UM, Unity Technologies, Valve or Apple. Disco Elysium is a trademark of its respective owner; Unity is a trademark of Unity Technologies; Steam is a trademark of Valve Corporation. The Unity iOS player is downloaded by each user from Unity and used under Unity's terms; it is not part of this repository.
 
+- **No ownership check is removed.** The Steam stub only reports that Steam is not available, a case the game's own code already handles: the same code also supports GOG Galaxy, and the GOG release of the game has no DRM. Nothing in this project decrypts the game or works around a licence check.
+- **Unity's terms are yours to follow.** `make fetch` downloads Unity's iOS player onto your own Mac. Using it is subject to Unity's terms, and you are responsible for complying with them.
+- **Rights holders:** if you have a concern about this repository, please open an issue. The owner will respond and, where needed, change or remove the material in question.
+
 ## Acknowledgements
 
 - **Unity Technologies**: the iOS player of Unity 2020.3.12f1, downloaded by each user from Unity's CDN.

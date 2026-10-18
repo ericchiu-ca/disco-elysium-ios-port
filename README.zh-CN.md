@@ -148,6 +148,10 @@ flowchart LR
 
 **你必须拥有这款游戏。**这是一个独立的、非商业的个人使用项目，与 ZA/UM、Unity Technologies、Valve 或 Apple 没有任何关联，也未获得它们的认可或赞助。Disco Elysium 是其所有者的商标；Unity 是 Unity Technologies 的商标；Steam 是 Valve Corporation 的商标。Unity iOS 播放器由每个用户自己从 Unity 下载，并按 Unity 的条款使用，它不属于本仓库。
 
+- **不移除任何所有权校验。**Steam 桩库只报告"Steam 不可用"，游戏自己的代码本来就能处理这种情况：同一份代码也支持 GOG Galaxy，而游戏的 GOG 版本身没有 DRM。本项目不解密游戏，也不绕过任何授权校验。
+- **Unity 的条款由你自己遵守。**`make fetch` 把 Unity 的 iOS 播放器下载到你自己的 Mac 上。使用它受 Unity 条款的约束，遵守这些条款是你自己的责任。
+- **版权方：**如果你对本仓库有任何疑虑，请开一个 Issue。仓库所有者会回复，必要时修改或移除相关内容。
+
 ## 致谢
 
 - **Unity Technologies**：Unity 2020.3.12f1 的 iOS 播放器，由每个用户从 Unity 的 CDN 下载。
