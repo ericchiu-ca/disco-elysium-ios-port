@@ -2,7 +2,7 @@
 
 English: [ACHIEVEMENTS.md](ACHIEVEMENTS.md)
 
-在 iPad 上玩，成就会通过你 Mac 上的 Steam 客户端进到你的 Steam 账号。iPad 和 Mac 在同一个网络里时实时送达；不在时先留在 iPad 上，之后补发。这是可选功能：不开启时，移植版和原来完全一样（Steam 不可用，成就不记录）。
+在 iPad 上玩，成就会通过你 Mac 上的 Steam 客户端进到你的 Steam 账号。iPad 和 Mac 在同一个网络里时实时送达；不在时先留在 iPad 上，之后补发。**实验性，默认关闭：**不开启时，移植版和原来完全一样（Steam 不可用，成就不记录）。目前只在一套环境上验证过（[DEPENDENCIES.zh-CN.md](DEPENDENCIES.zh-CN.md) 里的参考 Mac 和 iPad），遇到问题请反馈。
 
 ## 原理
 
@@ -118,6 +118,6 @@ make relay-pair                 # 在 config.env 里生成配对密钥
 | Mac：Mac 上没有安装游戏时的转发服务 | 可用：读到全部 45 个成就；一次提交（把一个占位统计值按原值 `StoreStats`）得到了 Steam 的确认 |
 | iPad → 使用保存副本的后台服务 | 可用：Mac 端出故障期间排在 iPad 上的记录，在 `make relay-install` 之后送达、得到回复并被丢弃 |
 | Mac：找不到库 | 会话进程回答 `ERR steam Cannot load libsteam_api.dylib (…)`，iPad 把它写进日志；不会崩溃 |
-| iPad：在游戏里真正拿到的成就出现在你的 Steam 个人资料上 | 尚未观察到（需要你在 `make relay` 正式运行时拿到一个成就） |
+| iPad：在游戏里真正拿到的成就出现在你的 Steam 个人资料上 | 可用。2026-10-25 在游戏里拿到的 `ACH_HARDCORE_TASK`（"Venture into the HARDCORE"）：iPad 先记下 `recorded`，再记下 `committed to Steam`，转发服务记下 `Unlocking ACH_HARDCORE_TASK`，Steam 上显示它在那个时间解锁 |
 
 实现细节见 [PORTING_NOTES.zh-CN.md](PORTING_NOTES.zh-CN.md) 第十节。

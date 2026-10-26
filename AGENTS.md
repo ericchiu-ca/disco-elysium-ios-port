@@ -23,7 +23,7 @@ This repository turns a user's own Mac copy of Disco Elysium – The Final Cut i
 | 4 | `make install push-data` | `App installed`; `push-data` completes (about 9.6 GB, ~20 s over USB-C the first time, about 1 s afterwards). iPad unlocked and paired. Both keep the user's saves in `Documents/SaveGames`; never add `--remove-existing-content` to the push (it empties all of `Documents`, see PORTING_NOTES §2.6) | 1 min |
 | 5 | `make smoke` | "Smoke test PASSED". Then open `build/smoke/<time>/device/snap-000.jpg` and `snap-003.jpg` and confirm what [docs/VERIFY.md](docs/VERIFY.md) describes | 75 s |
 | 6 | Hand over to the user | Ask them to run the manual checklist in [docs/VERIFY.md](docs/VERIFY.md) | — |
-| 7 (optional) | Steam achievements: [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md). `make relay-pair`, `ACH_RELAY="1"`, `make stubs build install`, then `make relay-install` (ask first) | `./setup.sh check` section 7 has no `✗`; `make smoke` shows "Steam achievement mode on" and "The game uses Steam for achievements"; `make relay-status` shows `Steam session started` | 2 min |
+| 7 (optional, experimental) | Steam achievements: [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md). `make relay-pair`, `ACH_RELAY="1"`, `make stubs build install`, then `make relay-install` (ask first) | `./setup.sh check` section 7 has no `✗`; `make smoke` shows "Steam achievement mode on" and "The game uses Steam for achievements"; `make relay-status` shows `Steam session started` | 2 min |
 
 Expected reference results are listed in [docs/VERIFY.md](docs/VERIFY.md).
 

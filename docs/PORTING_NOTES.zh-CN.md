@@ -246,4 +246,4 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
   - 游戏输出 `INITIALIZE ACHIEVEMENTS:  STEAM`，`make smoke` 16 项全部通过。
   - `DE_ACH_TEST="40:ACH_DE_RELAY_TEST"` 调用游戏自己的 `Achievements.Set`，返回 true。桩库记下这条记录，Mac 回答 `NAK … unknown`（Steam 上没有这个名字），iPad 随即丢弃它。没有解锁任何成就。
   - 游戏的语言设置（中文）没有变化。
-- **尚未验证：**在游戏里真正拿到一个成就，并在转发服务正式运行时到达 Steam。
+- **真实成就，完整流程：**正常游玩（从图标启动 App，转发服务作为后台服务运行）时拿到的 `ACH_HARDCORE_TASK`，先在 iPad 上记下，再经 Mac 上的 Steam 客户端提交，几秒内出现在 Steam 个人资料上。

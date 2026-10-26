@@ -8,7 +8,7 @@ Platform: iPad with an M-series chip, iPadOS 27 (verified on iPad Pro 11-inch M5
 
 > This project provides only tools and an install shell that contains no game content. We do not distribute or endorse, and are not responsible for, any third party distributing game assets, game executables or install packages that contain game content. Please use only game files you legally own.
 
-**This repository is the port plus optional Steam achievement sync:** you play on the iPad, and the Steam client on your Mac commits your achievements ([docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md)). The base port without it is [disco-elysium-ios-port](https://github.com/ericchiu-ca/disco-elysium-ios-port).
+**New, experimental, off by default: Steam achievements.** Play on the iPad and the Steam client on your Mac commits your achievements, live over your local network or later. See [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md); without it the port behaves exactly as before.
 
 ## What it is, and what it is not
 
@@ -37,7 +37,7 @@ Verified on an iPad Pro 11-inch (M5), iPadOS 27.2:
 | Input | Tap, hover, drag, double-tap to run, right click, scroll; a highlight button for interactables |
 | Game | New game, the opening dialogue, loading a save, and play in the first area were tested on the device |
 | Memory | About 5.8 GB in game, with about 6.5 GB of headroom before the system would end the app |
-| Steam achievements | Optional: recorded on the iPad and committed through the Steam client on your Mac ([docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md)). Verified on the iPad up to Steam's answer, using a test name; a real achievement reaching Steam not observed yet |
+| Steam achievements | Optional: recorded on the iPad and committed through the Steam client on your Mac ([docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md)). Experimental, off by default. Verified on the reference iPad with a real achievement earned in play (it appeared on the Steam profile seconds later) |
 
 ## How it works
 
@@ -130,7 +130,7 @@ The repository is written so that an agent can reproduce the port on another per
 | Item | Status |
 |---|---|
 | Steam cloud saves | Not available; saves stay on the iPad |
-| Steam achievements | Off by default; optional sync through the Steam client on your Mac, see [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md) |
+| Steam achievements | Experimental and off by default; sync through the Steam client on your Mac, see [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md). Verified on one setup only |
 | Game controllers | Not supported yet (InControl's native layer is stubbed) |
 | Other builds of the game, other Unity versions | Not verified; several steps are tied to the exact Unity version and game classes, see [docs/PORTING_NOTES.md](docs/PORTING_NOTES.md) section 9 |
 | GOG Mac release | Not verified (it may be the same build) |

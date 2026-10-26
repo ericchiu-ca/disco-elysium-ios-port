@@ -2,7 +2,7 @@
 
 中文: [ACHIEVEMENTS.zh-CN.md](ACHIEVEMENTS.zh-CN.md)
 
-You play on the iPad. Your achievements reach your Steam account through the Steam client on your Mac. They arrive live while the iPad and the Mac are on the same network; otherwise they wait on the iPad and are sent later. This is optional: without it, the port behaves exactly as before (Steam is unavailable and nothing is recorded).
+You play on the iPad. Your achievements reach your Steam account through the Steam client on your Mac. They arrive live while the iPad and the Mac are on the same network; otherwise they wait on the iPad and are sent later. **Experimental and off by default:** without it, the port behaves exactly as before (Steam is unavailable and nothing is recorded). It has been verified on one setup (the reference Mac and iPad in [DEPENDENCIES.md](DEPENDENCIES.md)); please report problems.
 
 ## How it works
 
@@ -118,6 +118,6 @@ There is nothing to do. When you unlock an achievement in the game, it appears o
 | Mac: the relay while the game is not installed on the Mac | Works: all 45 achievements read, and a commit (`StoreStats` of an unchanged placeholder stat) confirmed by Steam |
 | iPad → the background service with its saved library | Works: an entry queued on the iPad while the Mac side was broken was delivered after `make relay-install`, answered and dropped |
 | Mac: a missing library | The worker answers `ERR steam Cannot load libsteam_api.dylib (…)` and the iPad logs it; no crash |
-| iPad: a real achievement earned in play reaching your Steam profile | Not observed yet (needs you to earn one with `make relay` running for real) |
+| iPad: a real achievement earned in play reaching your Steam profile | Works. `ACH_HARDCORE_TASK` ("Venture into the HARDCORE"), earned in play on 2026-10-25: the iPad logged `recorded` then `committed to Steam`, the relay logged `Unlocking ACH_HARDCORE_TASK`, and Steam shows it unlocked at that time |
 
 How it is built: [PORTING_NOTES.md](PORTING_NOTES.md) section 10.

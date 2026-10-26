@@ -10,7 +10,7 @@ English: [README.md](README.md)
 >
 > 本项目只提供工具和一个不含任何游戏内容的安装外壳。我们不分发、不认可、也不对任何第三方分发游戏资源、游戏可执行文件或含游戏内容的安装包负责。请只使用你合法拥有的游戏文件。
 
-**这个仓库是移植版加上可选的 Steam 成就同步：**你在 iPad 上玩，由你 Mac 上的 Steam 客户端提交成就（[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)）。不含这个功能的基础移植版是 [disco-elysium-ios-port](https://github.com/ericchiu-ca/disco-elysium-ios-port)。
+**新增、实验性、默认关闭：Steam 成就。**你在 iPad 上玩，由你 Mac 上的 Steam 客户端提交成就，通过本地网络实时送达，或者之后补发。见 [docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)；不开启时，移植版和原来完全一样。
 
 ## 它是什么，不是什么
 
@@ -39,7 +39,7 @@ English: [README.md](README.md)
 | 输入 | 轻点、悬停、拖动、双击跑步、右键、滚轮；一个用于高亮可交互物的按钮 |
 | 游戏 | 新游戏、开场对话、读取存档、在第一个区域里游玩，都已在设备上测试 |
 | 内存 | 游戏中约 5.8 GB，距系统强制结束还有约 6.5 GB 余量 |
-| Steam 成就 | 可选：在 iPad 上记录，通过你 Mac 上的 Steam 客户端提交（[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)）。已在 iPad 上用测试名字验证到 Steam 回复为止；真实成就到达 Steam 尚未观察到 |
+| Steam 成就 | 可选：在 iPad 上记录，通过你 Mac 上的 Steam 客户端提交（[docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)）。实验性，默认关闭。已在参考环境的 iPad 上用游戏里真正拿到的成就验证（几秒后出现在 Steam 个人资料上） |
 
 ## 原理
 
@@ -132,7 +132,7 @@ flowchart LR
 | 项目 | 状态 |
 |---|---|
 | Steam 云存档 | 没有；存档只保存在 iPad 上 |
-| Steam 成就 | 默认关闭；可以通过你 Mac 上的 Steam 客户端同步，见 [docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md) |
+| Steam 成就 | 实验性，默认关闭；通过你 Mac 上的 Steam 客户端同步，见 [docs/ACHIEVEMENTS.zh-CN.md](docs/ACHIEVEMENTS.zh-CN.md)。只在一套环境上验证过 |
 | 游戏手柄 | 暂不支持（InControl 的原生层是桩库） |
 | 游戏的其他构建、其他 Unity 版本 | 未验证；有几个步骤绑定了确切的 Unity 版本和游戏类，见 [docs/PORTING_NOTES.zh-CN.md](docs/PORTING_NOTES.zh-CN.md) 第九节 |
 | GOG 的 Mac 版 | 未验证（可能是同一个构建） |

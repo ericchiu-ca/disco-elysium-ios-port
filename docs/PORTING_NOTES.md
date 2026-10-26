@@ -246,4 +246,4 @@ Optional, off by default (`ACH_RELAY=1` in `config.env`). User-facing guide: [AC
   - The game logs `INITIALIZE ACHIEVEMENTS:  STEAM` and `make smoke` passes all 16 checks.
   - `DE_ACH_TEST="40:ACH_DE_RELAY_TEST"` calls the game's own `Achievements.Set`, which returns true. The stub records the entry, the Mac answers `NAK … unknown` (Steam has no such name), and the iPad drops it. Nothing was unlocked.
   - The game's language setting (Chinese) was unchanged.
-- **Not verified yet:** a real achievement earned in play reaching Steam with the relay running for real.
+- **A real achievement, end to end:** `ACH_HARDCORE_TASK`, earned in normal play (app launched from its icon, relay running as the background service), was recorded on the iPad, committed through the Mac's Steam client, and shown on the Steam profile within seconds.
