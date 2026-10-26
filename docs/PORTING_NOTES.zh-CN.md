@@ -230,6 +230,7 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
 - **App ID：**`SteamAPI_Init` 从环境变量 `SteamAppId` / `SteamGameId`，以及临时工作目录里的 `steam_appid.txt` 得知 App ID。
 - **取接口函数：**参考环境那份 libsteam_api 导出的是 `SteamAPI_SteamUserStats_v012`、`SteamAPI_SteamUser_v021`、`SteamAPI_SteamFriends_v017`、`SteamAPI_SteamApps_v008`。其他构建如果用了更新的 SDK，名字可能不同。
 - **后台服务的位置：**launchd 启动的任务没有隐私授权就读不了 `~/Documents`。所以 `make relay-install` 把脚本复制到 `~/Library/Application Support/DEPortSteamRelay/`，配置放进任务的环境变量（plist 权限 0600）。
+- **库的副本：**后台服务原先从游戏目录加载 `libsteam_api.dylib`，游戏从 Mac 上卸载后就悄悄失效了：会话进程在 `dlopen` 时带着 traceback 退出，iPad 只看到连接断开。现在 `make relay-install` 会把游戏的库复制到脚本旁边（`cp -p`，保留 Valve 的签名），服务改用这份副本。其他命令在游戏装着时用游戏里的库，否则用这份副本。`SteamAPI_Init` 只要求 Steam 知道你拥有这个 App，不要求它已安装：Disco Elysium 卸载期间，读取全部成就和一次 `StoreStats` 都成功了。会话进程启动时的任何失败，现在都会以 `ERR steam <原因>` 发给 iPad。
 
 ### 10.5 目前验证过的
 

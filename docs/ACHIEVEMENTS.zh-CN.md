@@ -24,7 +24,8 @@ flowchart LR
 
 ## 需要什么
 
-- Mac 版 Steam，登录拥有这款游戏的账号。Mac 版游戏要装着；移植本来就需要它。
+- Mac 版 Steam，登录拥有这款游戏的账号。
+- 运行 `make relay-install` 时 Mac 版游戏要装着：它会把游戏自带的 `libsteam_api.dylib` 留一份副本。之后可以把游戏从 Mac 上卸载，读取和提交成就照样可用（已测试）。不过重新构建 iPad 版 App 时，还是要把游戏装回来。
 - 实时送达还需要：iPad 和 Mac 在同一个本地网络里，Mac 没有睡眠。
 - 一个以成就模式构建的 App（见下文）。
 
@@ -72,6 +73,7 @@ make relay-pair                 # 在 config.env 里生成配对密钥
 | Mac | `config.env` | `ACH_RELAY`、`ACH_RELAY_HOST`、`ACH_RELAY_PORT`、`ACH_RELAY_SECRET`（不会提交） |
 | Mac | `~/Library/LaunchAgents/<Bundle ID>.steam-relay.plist` | 后台服务，含密钥；只有你自己可读 |
 | Mac | `~/Library/Application Support/DEPortSteamRelay/steam_relay.py` | 后台服务运行的副本。launchd 启动的进程默认读不了 `~/Documents` |
+| Mac | `~/Library/Application Support/DEPortSteamRelay/libsteam_api.dylib` | 后台服务加载的游戏自带 Steam 库的副本（保留 Valve 的签名），游戏卸载后服务照样能用。不会提交 |
 | Mac | `~/Library/Logs/DEPortSteamRelay.log` | 后台服务的日志 |
 
 ## 安全与隐私
@@ -99,6 +101,7 @@ make relay-pair                 # 在 config.env 里生成配对密钥
 | `Player.log`：`cannot reach the Mac at …` | 是否在同一个网络？Mac 醒着吗？转发服务在运行吗？iPad 上：设置 → 隐私与安全性 → 本地网络 → Disco Elysium 是否打开 |
 | `Player.log`：`the Mac refused the session: ERR auth` | App 和 Mac 的密钥不一致：`make relay-pair` 之后要重新构建、安装 App，再 `make relay-install` |
 | `Player.log`：`the Mac refused the session: ERR steam …` | Mac 上的 Steam 没有运行，或者没有登录 |
+| `ERR steam Cannot load libsteam_api.dylib (…)` | 后台服务没有这个库的副本，游戏也没有安装：在 Steam 里安装 Mac 版游戏，运行 `make relay-install`，之后可以再卸载 |
 | 转发日志：`Unknown achievement …, dropped` | 游戏发来了 Steam 上没有的名字，已从队列里删除 |
 | 某个成就没到 | iPad 上的 `pending.txt`（"文件"App）里还有它；转发日志里能看到会话情况 |
 | `Player.log`：`INITIALIZE ACHIEVEMENTS:  NONE` | 启动时出现一次是正常的，那时 Steam 还没起来。之后应当还有一行 `STEAM`；如果没有，用 `make stubs build install` 重新构建 |
@@ -112,6 +115,9 @@ make relay-pair                 # 在 config.env 里生成配对密钥
 | Mac：`make achievements` 读取真实的 Steam 账号 | 可用（读到 45 个成就） |
 | Mac：把 iPad 桩库编译成 macOS 版，连接 `make relay DRY_RUN=1` | 配对通过，错误密钥被拒绝；收到 Steam 状态；未知名字被丢弃；真实名字被转发，演练模式下保留在队列里；1101 / 1102 / 1103 三个回调按预期大小送达 |
 | iPad：游戏自己的 `Achievements.Set` 经桩库到 Mac 再返回 | 可用。`DE_ACH_TEST` 发送一个虚构的 `ACH_DE_` 名字：桩库记下它，Mac 上的 Steam 会话回答"unknown"，iPad 随即丢弃，没有解锁任何东西。`make smoke` 16 项全部通过；游戏输出 `INITIALIZE ACHIEVEMENTS:  STEAM` |
+| Mac：Mac 上没有安装游戏时的转发服务 | 可用：读到全部 45 个成就；一次提交（把一个占位统计值按原值 `StoreStats`）得到了 Steam 的确认 |
+| iPad → 使用保存副本的后台服务 | 可用：Mac 端出故障期间排在 iPad 上的记录，在 `make relay-install` 之后送达、得到回复并被丢弃 |
+| Mac：找不到库 | 会话进程回答 `ERR steam Cannot load libsteam_api.dylib (…)`，iPad 把它写进日志；不会崩溃 |
 | iPad：在游戏里真正拿到的成就出现在你的 Steam 个人资料上 | 尚未观察到（需要你在 `make relay` 正式运行时拿到一个成就） |
 
 实现细节见 [PORTING_NOTES.zh-CN.md](PORTING_NOTES.zh-CN.md) 第十节。

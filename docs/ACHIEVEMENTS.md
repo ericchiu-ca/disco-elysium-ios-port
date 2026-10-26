@@ -24,7 +24,8 @@ flowchart LR
 
 ## What you need
 
-- Steam for Mac, logged in with the account that owns the game. The Mac version of the game must be installed; the port needs it anyway.
+- Steam for Mac, logged in with the account that owns the game.
+- The Mac version of the game installed when you run `make relay-install`, which keeps its own copy of the game's `libsteam_api.dylib`. After that you may uninstall the game from the Mac: reading and committing through Steam still work (tested). Rebuilding the iPad app does need the game installed again.
 - For live delivery: the iPad and the Mac on the same local network, and the Mac awake.
 - An app built in achievement mode (below).
 
@@ -72,6 +73,7 @@ There is nothing to do. When you unlock an achievement in the game, it appears o
 | Mac | `config.env` | `ACH_RELAY`, `ACH_RELAY_HOST`, `ACH_RELAY_PORT`, `ACH_RELAY_SECRET` (never committed) |
 | Mac | `~/Library/LaunchAgents/<bundle id>.steam-relay.plist` | The background service, including the secret; readable only by you |
 | Mac | `~/Library/Application Support/DEPortSteamRelay/steam_relay.py` | The copy the service runs. launchd processes cannot read `~/Documents` by default |
+| Mac | `~/Library/Application Support/DEPortSteamRelay/libsteam_api.dylib` | The copy of the game's own Steam library that the service loads (Valve's signature intact), so the service keeps working after the game is uninstalled. Never committed |
 | Mac | `~/Library/Logs/DEPortSteamRelay.log` | The service's log |
 
 ## Security and privacy
@@ -99,6 +101,7 @@ There is nothing to do. When you unlock an achievement in the game, it appears o
 | `Player.log`: `cannot reach the Mac at …` | Same network? Mac awake? Relay running? On the iPad: Settings → Privacy & Security → Local Network → Disco Elysium is on |
 | `Player.log`: `the Mac refused the session: ERR auth` | The app and the Mac have different secrets: after `make relay-pair` rebuild and reinstall the app, then `make relay-install` |
 | `Player.log`: `the Mac refused the session: ERR steam …` | Steam is not running on the Mac, or not logged in |
+| `ERR steam Cannot load libsteam_api.dylib (…)` | The service has no copy of the library and the game is not installed: install the Mac version in Steam, run `make relay-install`, then you may uninstall it again |
 | Relay log: `Unknown achievement …, dropped` | The game sent a name Steam does not have; it is removed from the queue |
 | An achievement did not arrive | `pending.txt` on the iPad (Files app) still lists it; the relay log shows the session |
 | `Player.log`: `INITIALIZE ACHIEVEMENTS:  NONE` | Normal once at start-up, before Steam is up. A second line should say `STEAM`; if it does not, rebuild with `make stubs build install` |
@@ -112,6 +115,9 @@ There is nothing to do. When you unlock an achievement in the game, it appears o
 | Mac: `make achievements` against a real Steam account | Works (45 achievements read) |
 | Mac: the iPad stub built for macOS against `make relay DRY_RUN=1` | Pairing accepted and a wrong secret rejected; Steam state received; an unknown name dropped; a real name forwarded and kept queued in dry run; callbacks 1101 / 1102 / 1103 delivered with the expected sizes |
 | iPad: the game's own `Achievements.Set` through the stub to the Mac and back | Works. `DE_ACH_TEST` sends a made-up `ACH_DE_` name: the stub records it, the Mac's Steam session answers "unknown", the iPad drops it, and nothing is unlocked. `make smoke` passes all 16 checks; the game logs `INITIALIZE ACHIEVEMENTS:  STEAM` |
+| Mac: the relay while the game is not installed on the Mac | Works: all 45 achievements read, and a commit (`StoreStats` of an unchanged placeholder stat) confirmed by Steam |
+| iPad → the background service with its saved library | Works: an entry queued on the iPad while the Mac side was broken was delivered after `make relay-install`, answered and dropped |
+| Mac: a missing library | The worker answers `ERR steam Cannot load libsteam_api.dylib (…)` and the iPad logs it; no crash |
 | iPad: a real achievement earned in play reaching your Steam profile | Not observed yet (needs you to earn one with `make relay` running for real) |
 
 How it is built: [PORTING_NOTES.md](PORTING_NOTES.md) section 10.

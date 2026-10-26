@@ -7,7 +7,7 @@
 - **No game content**: no game program, scripts, data, art, text, audio, shaders, saves or screenshots. Everything under `build/` (retagged binaries, converted data, generated project, device logs and snapshots) is produced on your machine from your copy and is ignored by git.
 - **No Unity binaries or Unity source files**: the iOS player library, `baselib.a`, the Trampoline and the built-in resources are downloaded by each user from Unity's CDN into `vendor/`, which is ignored by git.
 - **No copied code from the game's native plugins**: the stub libraries are generated at build time from the *export names* of your own copy.
-- **No Steam binaries**: the optional achievement relay loads the `libsteam_api.dylib` inside your own copy of the game.
+- **No Steam binaries**: the optional achievement relay loads the `libsteam_api.dylib` from your own copy of the game, or the local copy `make relay-install` keeps under `~/Library/Application Support/DEPortSteamRelay/` (outside the repository).
 
 ## In the repository
 

@@ -7,7 +7,7 @@ English: [DERIVED.md](DERIVED.md)
 - **没有任何游戏内容**：没有游戏程序、脚本、数据、美术、文字、音频、着色器、存档或截图。`build/` 下的一切（改标后的二进制、转换后的数据、生成的工程、设备日志与截图）都由你自己的副本在你的电脑上生成，并且被 git 忽略。
 - **没有 Unity 的二进制或源码文件**：iOS 播放器库、`baselib.a`、Trampoline 和内置资源由每个用户自己从 Unity 的 CDN 下载到 `vendor/`，该目录被 git 忽略。
 - **没有从游戏原生插件复制的代码**：桩库在构建时根据你自己副本的*导出函数名*生成。
-- **没有 Steam 的二进制**：可选的成就转发加载的是你自己那份游戏里的 `libsteam_api.dylib`。
+- **没有 Steam 的二进制**：可选的成就转发加载的是你自己那份游戏里的 `libsteam_api.dylib`，或者 `make relay-install` 在 `~/Library/Application Support/DEPortSteamRelay/` 下保存的本机副本（不在仓库里）。
 
 ## 仓库里有的
 

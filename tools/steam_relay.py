@@ -103,12 +103,19 @@ class Steam:
         os.chdir(work)
         os.environ["SteamAppId"] = os.environ["SteamGameId"] = str(self.app_id)
 
-        lib = ctypes.CDLL(lib_path)
+        try:
+            lib = ctypes.CDLL(lib_path)
+        except OSError:
+            raise SteamError(m("无法加载 libsteam_api.dylib（%s）。在 Steam 里重新安装 Mac 版游戏，然后运行 make relay-install，它会保留一份副本",
+                               "Cannot load libsteam_api.dylib (%s). Reinstall the Mac version of the game in Steam, then run make relay-install; it keeps a copy") % lib_path)
         P, B, S = ctypes.c_void_p, ctypes.c_bool, ctypes.c_char_p
         I32, U32, U64, F = ctypes.c_int32, ctypes.c_uint32, ctypes.c_uint64, ctypes.c_float
 
         def fn(name, res, *args):
-            f = getattr(lib, name)
+            try:
+                f = getattr(lib, name)
+            except AttributeError:
+                raise SteamError(m("这个版本的 libsteam_api 没有 %s", "This libsteam_api version has no %s") % name)
             f.restype = res
             f.argtypes = list(args)
             return f
@@ -490,12 +497,15 @@ def cmd_worker(args):
     sock = socket.socket(fileno=fd)
     sock.settimeout(None)
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    # 任何初始化失败都要告诉 iPad 原因（它会写进 Player.log），而不是让会话进程直接崩溃断开
+    # Any start-up failure is reported to the iPad (which writes it to Player.log) instead of the session process crashing and dropping the connection
     try:
         steam = Steam(env("DE_STEAM_LIB"), env("DE_STEAM_APP_ID"))
-    except SteamError as e:
-        log(str(e))
+    except Exception as e:  # noqa: BLE001
+        reason = str(e) if isinstance(e, SteamError) else "%s: %s" % (type(e).__name__, e)
+        log(reason)
         try:
-            send_line(sock, "ERR steam " + str(e))
+            send_line(sock, "ERR steam " + reason.replace("\n", " "))
         except OSError:
             pass
         return

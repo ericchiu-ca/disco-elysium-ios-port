@@ -108,8 +108,10 @@ if [[ "$ACH_RELAY" == 1 ]]; then
   if [[ "$ACH_RELAY_SECRET" =~ ^[0-9a-f]{32,64}$ ]]; then ok "$(m "配对密钥已生成" "Pairing secret generated")"
   else bad "$(m "还没有配对密钥" "No pairing secret yet")" "make relay-pair"; fi
   note "$(m "iPad 将连接 " "The iPad will connect to ")$(relay_host):$ACH_RELAY_PORT"
+  SAVED_LIB="$HOME/Library/Application Support/DEPortSteamRelay/libsteam_api.dylib"
   if [[ -f "$GAME_CONTENTS/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib" ]]; then ok "$(m "游戏自带的 libsteam_api.dylib" "The game's own libsteam_api.dylib")"
-  else bad "$(m "游戏目录里没有 libsteam_api.dylib" "No libsteam_api.dylib in the game folder")" "$(m "确认 GAME_APP 指向 Steam 版" "Make sure GAME_APP points to the Steam version")"; fi
+  elif [[ -f "$SAVED_LIB" ]]; then ok "$(m "后台服务保存的 libsteam_api.dylib（Mac 上的游戏没有安装）" "The relay's saved libsteam_api.dylib (the game is not installed on the Mac)")"
+  else bad "$(m "没有 libsteam_api.dylib：游戏没有安装，也没有保存的副本" "No libsteam_api.dylib: the game is not installed and there is no saved copy")" "$(m "在 Steam 里安装 Mac 版游戏，然后运行 make relay-install" "Install the Mac version in Steam, then run make relay-install")"; fi
   if [[ -d /Applications/Steam.app || -d "$HOME/Applications/Steam.app" ]]; then ok "Steam.app"
   else bad "$(m "没有安装 Steam" "Steam is not installed")" "$(m "从 store.steampowered.com 安装 Steam 并登录" "Install Steam from store.steampowered.com and log in")"; fi
   if launchctl print "gui/$(id -u)/${BUNDLE_ID:-de-port}.steam-relay" > /dev/null 2>&1; then ok "$(m "实时转发后台服务已安装" "Live relay background service installed")"

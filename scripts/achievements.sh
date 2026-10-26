@@ -28,17 +28,24 @@ shift || true
 # "accept incoming connections?" prompt appears
 PY=/usr/bin/python3
 TOOL="$ROOT/tools/steam_relay.py"
-STEAM_LIB="$GAME_CONTENTS/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib"
+GAME_STEAM_LIB="$GAME_CONTENTS/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib"
 LABEL="${BUNDLE_ID:-de-port}.steam-relay"
 AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
 # 后台服务的副本放在 ~/Library 下：launchd 启动的进程默认读不了 ~/Documents（隐私保护）
 # The background service's copy lives under ~/Library: processes started by launchd cannot read ~/Documents by default (privacy protection)
 SERVICE_DIR="$HOME/Library/Application Support/DEPortSteamRelay"
 SERVICE_LOG="$HOME/Library/Logs/DEPortSteamRelay.log"
+# make relay-install 从游戏里留一份 libsteam_api.dylib 在这里，之后 Mac 上的游戏卸载了也能继续提交成就
+# make relay-install keeps a copy of libsteam_api.dylib here, so achievements can still be committed after the game is uninstalled from the Mac
+SAVED_STEAM_LIB="$SERVICE_DIR/libsteam_api.dylib"
 
+# 选用 libsteam_api：游戏还装着就用游戏里的，否则用保存的那份
+# Pick libsteam_api: the game's own while it is installed, otherwise the saved copy
 steam_env() {
-  require_game
-  [[ -f "$STEAM_LIB" ]] || die "$(m "找不到游戏的 libsteam_api.dylib：$STEAM_LIB" "The game's libsteam_api.dylib was not found: $STEAM_LIB")"
+  if [[ -f "$GAME_STEAM_LIB" ]]; then STEAM_LIB="$GAME_STEAM_LIB"
+  elif [[ -f "$SAVED_STEAM_LIB" ]]; then STEAM_LIB="$SAVED_STEAM_LIB"
+  else die "$(m "找不到 libsteam_api.dylib：Mac 上的游戏没有安装，也没有保存的副本。在 Steam 里安装 Mac 版游戏，然后运行 make relay-install（它会留一份副本）" "libsteam_api.dylib not found: the game is not installed on the Mac and there is no saved copy. Install the Mac version in Steam, then run make relay-install (it keeps a copy)")"
+  fi
   export DE_STEAM_LIB="$STEAM_LIB" DE_STEAM_APP_ID="$STEAM_APP_ID"
   export DE_RELAY_PORT="$ACH_RELAY_PORT" DE_RELAY_SECRET="$ACH_RELAY_SECRET"
 }
@@ -96,6 +103,14 @@ case "$cmd" in
     [[ -n "$ACH_RELAY_SECRET" ]] || die "$(m "还没有配对密钥：先 make relay-pair" "No pairing secret yet: run make relay-pair first")"
     mkdir -p "$SERVICE_DIR" "$(dirname "$AGENT")" "$(dirname "$SERVICE_LOG")"
     cp "$TOOL" "$SERVICE_DIR/steam_relay.py"
+    # 留一份游戏的 libsteam_api.dylib（保留 Valve 的签名）；游戏没装时沿用已保存的那份
+    # Keep a copy of the game's libsteam_api.dylib (Valve's signature is preserved); if the game is not installed, keep using the saved one
+    if [[ "$STEAM_LIB" == "$GAME_STEAM_LIB" ]]; then
+      cp -p "$GAME_STEAM_LIB" "$SAVED_STEAM_LIB.tmp" && mv -f "$SAVED_STEAM_LIB.tmp" "$SAVED_STEAM_LIB"
+      log "$(m "已保存一份 libsteam_api.dylib：$SAVED_STEAM_LIB" "Saved a copy of libsteam_api.dylib: $SAVED_STEAM_LIB")"
+    else
+      log "$(m "Mac 上没有安装游戏，沿用已保存的 libsteam_api.dylib" "The game is not installed on the Mac; keeping the saved libsteam_api.dylib")"
+    fi
     # 配置（含配对密钥）写进 plist 的环境变量，文件只有自己可读
     # The configuration (pairing secret included) goes into the plist's environment variables; only you can read the file
     umask 077
@@ -111,7 +126,7 @@ case "$cmd" in
   </array>
   <key>EnvironmentVariables</key>
   <dict>
-    <key>DE_STEAM_LIB</key><string>$STEAM_LIB</string>
+    <key>DE_STEAM_LIB</key><string>$SAVED_STEAM_LIB</string>
     <key>DE_STEAM_APP_ID</key><string>$STEAM_APP_ID</string>
     <key>DE_RELAY_PORT</key><string>$ACH_RELAY_PORT</string>
     <key>DE_RELAY_SECRET</key><string>$ACH_RELAY_SECRET</string>
@@ -124,8 +139,14 @@ case "$cmd" in
 </dict>
 </plist>
 EOF
+    # bootout 是异步的：等旧服务真正卸载后再加载，否则 bootstrap 会报 "5: Input/output error"
+    # bootout is asynchronous: wait until the old service is really gone before loading, or bootstrap fails with "5: Input/output error"
     launchctl bootout "gui/$(id -u)/$LABEL" 2> /dev/null || true
-    launchctl bootstrap "gui/$(id -u)" "$AGENT"
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      launchctl print "gui/$(id -u)/$LABEL" > /dev/null 2>&1 || break
+      sleep 0.5
+    done
+    launchctl bootstrap "gui/$(id -u)" "$AGENT" 2> /dev/null || { sleep 2; launchctl bootstrap "gui/$(id -u)" "$AGENT"; }
     log "$(m "后台服务已安装并启动（$LABEL），日志：$SERVICE_LOG" "Background service installed and started ($LABEL), log: $SERVICE_LOG")"
     ;;
   uninstall)
@@ -141,6 +162,9 @@ EOF
       log "$(m "后台服务没有安装（make relay-install）" "Background service not installed (make relay-install)")"
     fi
     pgrep -x steam_osx > /dev/null && echo "  Steam: $(m "运行中" "running")" || echo "  Steam: $(m "没有运行" "not running")"
+    [[ -f "$SAVED_STEAM_LIB" ]] && echo "  libsteam_api: $(m "后台服务用保存的副本" "the service uses the saved copy") ($SAVED_STEAM_LIB)" \
+      || echo "  libsteam_api: $(m "后台服务没有保存的副本，游戏装着时再运行 make relay-install" "the service has no saved copy; run make relay-install while the game is installed")"
+    [[ -f "$GAME_STEAM_LIB" ]] && echo "  $(m "Mac 版游戏：已安装" "Mac game: installed")" || echo "  $(m "Mac 版游戏：没有安装（不影响后台服务，只要有保存的副本）" "Mac game: not installed (fine for the service as long as it has the saved copy)")"
     [[ -f "$SERVICE_LOG" ]] && tail -n 15 "$SERVICE_LOG"
     ;;
   *)

@@ -230,6 +230,7 @@ Optional, off by default (`ACH_RELAY=1` in `config.env`). User-facing guide: [AC
 - **App ID:** `SteamAPI_Init` learns the app ID from `SteamAppId` / `SteamGameId` and from a `steam_appid.txt` in a temporary working directory.
 - **Accessors:** the libsteam_api in the reference copy exports `SteamAPI_SteamUserStats_v012`, `SteamAPI_SteamUser_v021`, `SteamAPI_SteamFriends_v017` and `SteamAPI_SteamApps_v008`. A newer SDK in another build may rename them.
 - **Service location:** launchd jobs cannot read `~/Documents` without a privacy grant. `make relay-install` therefore copies the script to `~/Library/Application Support/DEPortSteamRelay/`, and puts the configuration in the job's environment (plist mode 0600).
+- **A saved copy of the library:** the service first loaded `libsteam_api.dylib` from the game folder, and broke silently when the game was uninstalled from the Mac: the worker died in `dlopen` with a traceback and the iPad only saw the connection drop. `make relay-install` now copies the game's library (`cp -p`, Valve's signature intact) next to the script and points the service at that copy. The other commands use the game's library while it is installed and the saved copy otherwise. `SteamAPI_Init` only needs Steam to know you own the app, not to have it installed: with Disco Elysium uninstalled, reading all achievements and a `StoreStats` both succeeded. Any start-up failure in the worker is now sent to the iPad as `ERR steam <reason>`.
 
 ### 10.5 Verified so far
 
