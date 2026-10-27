@@ -453,9 +453,20 @@ def cmd_serve(args):
     log(m("等待 iPad 连接，端口 %d%s", "Waiting for the iPad on port %d%s") % (port, m("（演练模式：不解锁）", " (dry run: nothing is unlocked)") if dry_run else ""))
     worker = None
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    # accept 每秒超时一次，用来回收已经结束的会话进程。不回收的话它会一直是僵尸进程，
+    # Steam 盯着的正是这个进程号，于是 iPad 上关了游戏，Steam 里仍显示"运行中"
+    # accept times out every second so a finished session process can be reaped. Left unreaped it stays a zombie,
+    # and Steam watches exactly that process id, so Steam kept showing the game as running after it closed on the iPad
+    server.settimeout(1.0)
     try:
         while True:
-            conn, addr = server.accept()
+            if worker and worker.poll() is not None:
+                worker = None
+            try:
+                conn, addr = server.accept()
+            except socket.timeout:
+                continue
+            conn.settimeout(None)
             peer = addr[0]
             try:
                 conn.settimeout(10)

@@ -103,6 +103,7 @@ There is nothing to do. When you unlock an achievement in the game, it appears o
 | `Player.log`: `the Mac refused the session: ERR steam …` | Steam is not running on the Mac, or not logged in |
 | `ERR steam Cannot load libsteam_api.dylib (…)` | The service has no copy of the library and the game is not installed: install the Mac version in Steam, run `make relay-install`, then you may uninstall it again |
 | Relay log: `Unknown achievement …, dropped` | The game sent a name Steam does not have; it is removed from the queue |
+| Steam keeps showing Disco Elysium as running after you closed it on the iPad | Fixed: older versions of the relay left the finished session process as a zombie, and Steam watches that process. Run `make relay-install` to update the service. Expected timing: a few seconds after you close the game; if you only switch away or lock the iPad, up to about 90 seconds (the relay waits that long for the next heartbeat) |
 | An achievement did not arrive | `pending.txt` on the iPad (Files app) still lists it; the relay log shows the session |
 | `Player.log`: `INITIALIZE ACHIEVEMENTS:  NONE` | Normal once at start-up, before Steam is up. A second line should say `STEAM`; if it does not, rebuild with `make stubs build install` |
 

@@ -221,7 +221,7 @@ iPad 约为 1.45:1。游戏只支持固定比例（`AspectUtility.Ratio_16x9 / 2
   - Mac 回 `OK`，接着发 `STATE BEGIN … STATE END`，格式与 `state.txt` 相同。
   - 每条队列记录以 `SET <编号> …` 发出。Mac 在 `StoreStats` 和 `UserStatsStored_t` 都成功后回 `ACK <编号>`；或者回 `NAK <编号> unknown`，iPad 随即丢弃这条记录。
   - 每 20 秒一次 `PING`，让会话保持连接，Steam 上的"正在玩"状态也随之保持。
-- **每个连接一个 Steam 会话：**`serve` 完成认证后，把连接交给一个 `worker` 进程。worker 调用 `SteamAPI_Init`，读出全部成就（以及 Steam 缓存的 `UserGameStatsSchema_<appid>.bin` 里列出的统计值）。iPad 断开、或 90 秒没有消息时，它调用 `SteamAPI_Shutdown`。新的已认证连接会替换旧的 worker。
+- **每个连接一个 Steam 会话：**`serve` 完成认证后，把连接交给一个 `worker` 进程。worker 调用 `SteamAPI_Init`，读出全部成就（以及 Steam 缓存的 `UserGameStatsSchema_<appid>.bin` 里列出的统计值）。iPad 断开、或 90 秒没有消息时，它调用 `SteamAPI_Shutdown`。新的已认证连接会替换旧的 worker。`serve` 会在一秒内回收结束的 worker（它的 `accept` 每秒超时一次）。最初的版本只在下一个连接到来时才回收，最后一个 worker 就一直是僵尸进程；Steam 盯着的正是这个进程号，所以 iPad 上关了游戏，Steam 里仍显示运行中。修复后，iPad 断开约两秒，Steam 就会记下 `Game process removed`。
 - **USB 方式：**`make achievements-sync` 用 `devicectl` 取回 iPad 上的 `pending.txt`，提交到 Steam，再把新的 `state.txt` 拷回 iPad。App 发现 `state.txt` 的修改时间变了就重新读取，并删掉 Steam 上已经有的记录。
 
 ### 10.4 Mac 端的取舍

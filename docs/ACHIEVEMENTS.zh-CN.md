@@ -103,6 +103,7 @@ make relay-pair                 # 在 config.env 里生成配对密钥
 | `Player.log`：`the Mac refused the session: ERR steam …` | Mac 上的 Steam 没有运行，或者没有登录 |
 | `ERR steam Cannot load libsteam_api.dylib (…)` | 后台服务没有这个库的副本，游戏也没有安装：在 Steam 里安装 Mac 版游戏，运行 `make relay-install`，之后可以再卸载 |
 | 转发日志：`Unknown achievement …, dropped` | 游戏发来了 Steam 上没有的名字，已从队列里删除 |
+| iPad 上关了游戏，Steam 里 Disco Elysium 仍显示"运行中" | 已修复：旧版的转发服务没有回收结束的会话进程，它变成僵尸进程，而 Steam 盯着的正是这个进程。运行 `make relay-install` 更新服务即可。正常情况下：关掉游戏几秒后 Steam 就不再显示运行中；如果只是切到别的 App 或锁屏，最多约 90 秒（转发服务等下一次心跳的时间） |
 | 某个成就没到 | iPad 上的 `pending.txt`（"文件"App）里还有它；转发日志里能看到会话情况 |
 | `Player.log`：`INITIALIZE ACHIEVEMENTS:  NONE` | 启动时出现一次是正常的，那时 Steam 还没起来。之后应当还有一行 `STEAM`；如果没有，用 `make stubs build install` 重新构建 |
 
